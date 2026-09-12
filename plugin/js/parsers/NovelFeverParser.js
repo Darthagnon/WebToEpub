@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("novelfever.com", () => new NovelFeverParser());
 
-class NovelFeverParser extends Parser{
+class NovelFeverParser extends Parser {
     constructor() {
         super();
     }
@@ -35,6 +35,6 @@ class NovelFeverParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "#book-review");
+        util.removeChildElementsMatchingSelector(node, "#book-review");
     }    
 }

@@ -2,12 +2,12 @@
 
 parserFactory.register("manhwaden.com", () => new ManhwadenParser());
 
-class ManhwadenParser extends MadaraParser{
+class ManhwadenParser extends MadaraParser {
     constructor() {
         super();
     }
 
     preprocessRawDom(webPageDom) {
-        util.removeChildElementsMatchingCss(webPageDom, "img:not([src])");
+        util.removeChildElementsMatchingSelector(webPageDom, "img:not([src])");
     }
 }

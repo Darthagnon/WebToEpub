@@ -2,7 +2,7 @@
 
 parserFactory.register("wfxs.tw", () => new WfxsParser());
 
-class WfxsParser extends Parser{
+class WfxsParser extends Parser {
     constructor() {
         super();
     }
@@ -20,7 +20,7 @@ class WfxsParser extends Parser{
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);        
+        return Parser.findConstructedContent(dom);        
     }
 
     extractTitleImpl(dom) {

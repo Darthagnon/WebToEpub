@@ -2,7 +2,7 @@
 
 parserFactory.register("systemtranslation.com", () => new SystemTranslationParser());
 
-class SystemTranslationParser extends WordpressBaseParser{
+class SystemTranslationParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -17,7 +17,7 @@ class SystemTranslationParser extends WordpressBaseParser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "p.has-text-align-center");
+        util.removeChildElementsMatchingSelector(element, "p.has-text-align-center");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

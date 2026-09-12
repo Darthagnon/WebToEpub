@@ -2,7 +2,7 @@
 
 parserFactory.register("sexstories.com", () => new SexStoriesParser());
 
-class SexStoriesParser extends Parser{
+class SexStoriesParser extends Parser {
     constructor() {
         super();
     }
@@ -25,7 +25,7 @@ class SexStoriesParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "button, span.title_link, .top_info," +
+        util.removeChildElementsMatchingSelector(element, "button, span.title_link, .top_info," +
             " .story_date, .fontSizer, div.block_panel .story_info, #vote_details_div, #rating, #addfavorite," +
             " .title_panel, #bottom_panel, .count_comments, .pager, #comments");
         super.removeUnwantedElementsFromContentElement(element);

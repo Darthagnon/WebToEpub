@@ -1,14 +1,15 @@
 "use strict";
 
 parserFactory.register("mtlnation.com", () => new MtlnationParser());
+HttpClient.blockedSites.add("mtlnation.com");
 
-class MtlnationParser extends MadaraParser{
+class MtlnationParser extends MadaraParser {
     constructor() {
         super();
     }
 
     disabled() {
-        return chrome.i18n.getMessage("parserDisabledNotification");
+        return UIText.Warning.parserDisabledNotification;
     }
 
     findContent(dom) {
@@ -22,7 +23,7 @@ class MtlnationParser extends MadaraParser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".code-block, #text-chapter-toolbar, [style='display:none;']");
+        util.removeChildElementsMatchingSelector(element, ".code-block, #text-chapter-toolbar, [style='display:none;']");
         super.removeUnwantedElementsFromContentElement(element);
     }
 }

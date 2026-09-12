@@ -1,24 +1,19 @@
 "use strict";
 
 //dead url/ parser
-parserFactory.register("comrademao.com", function() { return new ComrademaoParser() });
+parserFactory.register("comrademao.com", () => new ComrademaoParser());
+HttpClient.blockedSites.add("comrademao.com");
 
-class ComrademaoParser extends Parser{
+class ComrademaoParser extends Parser {
     constructor() {
         super();
     }
 
     disabled() {
-        return chrome.i18n.getMessage("warningParserDisabledComradeMao");
+        return UIText.Warning.parserDisabledNotification;
     }
 
-    // This site can't handle more than 1 page at a time
-    clampSimultanousFetchSize() {
-        return 1;
-    }
-
-    populateUI(dom) {
-        super.populateUI(dom);
+    populateUIImpl() {
         document.getElementById("removeOriginalRow").hidden = false; 
     }
 
@@ -28,7 +23,7 @@ class ComrademaoParser extends Parser{
             ComrademaoParser.getUrlsOfTocPages,
             chapterUrlsUI
         ).then(urls => urls.reverse());
-    };
+    }
 
     static getUrlsOfTocPages(dom) {
         let pagination = dom.querySelector("nav.pagination");
@@ -42,7 +37,7 @@ class ComrademaoParser extends Parser{
                 let base = maxPageUrl.substring(0, index + 1);
                 let maxPage = parseInt(maxPageUrl.substring(index + 1));
                 if (1 < maxPage) {
-                    for(let i = 2; i <= maxPage; ++i) {
+                    for (let i = 2; i <= maxPage; ++i) {
                         tocUrls.push(`${base}${i}/`);
                     }
                 }
@@ -58,14 +53,14 @@ class ComrademaoParser extends Parser{
 
     findContent(dom) {
         return dom.querySelector(".site-main article");
-    };
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector(".entry-title");
-    };
+    }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "button, nav, div#comments");
+        util.removeChildElementsMatchingSelector(element, "button, nav, div#comments");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("chichipeph.com", () => new ChichipephParser());
 
-class ChichipephParser extends Parser{
+class ChichipephParser extends Parser {
     constructor() {
         super();
     }
@@ -22,7 +22,7 @@ class ChichipephParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div.entry-meta");
+        util.removeChildElementsMatchingSelector(element, "div.entry-meta");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

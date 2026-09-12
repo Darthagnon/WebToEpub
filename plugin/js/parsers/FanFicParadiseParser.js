@@ -2,22 +2,18 @@
 
 parserFactory.register("fanficparadise.com", () => new FanFicParadiseParser());
 
-class FanFicParadiseParser extends Parser{
+class FanFicParadiseParser extends Parser {
     constructor() {
         super();
         this.cache = new FetchCache();
         this.minimumThrottle = 50; //182 at 20
     }
 
-    clampSimultanousFetchSize() {
-        return 1;
-    }
-
     async getChapterUrls(dom) {
         let chapters = [...dom.querySelectorAll("li.threadmarkListItem a")]
             .filter(this.isLinkToChapter);
         return chapters.map(a => util.hyperLinkToChapter(a));
-    };
+    }
 
     isLinkToChapter(link) {
         return !link.querySelector("date")
@@ -25,17 +21,17 @@ class FanFicParadiseParser extends Parser{
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
-    };
+        return Parser.findConstructedContent(dom);
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("h1.p-title-value");
-    };
+    }
 
     extractAuthor(dom) {
         let authorLabel = dom.querySelector("a.username");
         return (authorLabel === null) ? super.extractAuthor(dom) : authorLabel.textContent;
-    };
+    }
 
     async fetchChapter(url) {
         let fetchedDom = await this.cache.fetch(url);

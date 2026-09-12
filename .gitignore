@@ -3,5 +3,9 @@ eslint/*.zip
 eslint/packed.js
 eslint/index.csv
 node_modules
-plugin/jszip/dist/jszip.min.js
+plugin/@zip.js/zip.js/dist/zip-no-worker.min.js
 package-lock.json
+.idea
+.vscode
+/plugin/dompurify/
+/plugin/@zip.js/

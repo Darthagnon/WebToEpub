@@ -2,7 +2,7 @@
 
 parserFactory.register("hostednovel.com", () => new HostednovelParser());
 
-class HostednovelParser extends Parser{
+class HostednovelParser extends Parser {
     constructor() {
         super();
     }
@@ -25,7 +25,7 @@ class HostednovelParser extends Parser{
         if (lastLink !== null) {
             let url = new URL(lastLink.href);
             let maxPage = parseInt(url.searchParams.get("page"));
-            for(let i = 2; i <= maxPage; ++i) {
+            for (let i = 2; i <= maxPage; ++i) {
                 url.searchParams.set("page", i);
                 urls.push(url.href);
             }
@@ -43,33 +43,32 @@ class HostednovelParser extends Parser{
 
     static formatTitle(link) {
         let div = link.querySelector("div");
-        util.removeChildElementsMatchingCss(div, "span, p");
+        util.removeChildElementsMatchingSelector(div, "span, p");
         return div.textContent.trim();
     }
 
     chapterUrlsOnPage(dom) {
         return [...dom.querySelectorAll(".chaptergroup a:not([rel])")]
-            .map(a => util.hyperLinkToChapter(a))
+            .map(a => util.hyperLinkToChapter(a));
     }
 
     findContent(dom) {
         return dom.querySelector("div.fontchanger");
     }
 
-    populateUI(dom) {
-        super.populateUI(dom);
+    populateUIImpl() {
         document.getElementById("removeAuthorNotesRow").hidden = false; 
     }
 
     extractTitleImpl(dom) {
         let link = dom.querySelector("h1");
-        util.removeChildElementsMatchingCss(link, "a");
+        util.removeChildElementsMatchingSelector(link, "a");
         return link;
     }
 
     removeUnwantedElementsFromContentElement(element) {
         this.tagAuthorNotesBySelector(element, "div.bg-light-200");
-        util.removeChildElementsMatchingCss(element, "div.adbox");
+        util.removeChildElementsMatchingSelector(element, "div.adbox");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

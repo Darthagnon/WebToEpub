@@ -1,19 +1,33 @@
 "use strict";
 
 parserFactory.register("botitranslation.com", () => new BotitranslationParser());
+parserFactory.register("mystorywave.com", () => new BotitranslationParser());
 
-class BotitranslationParser extends Parser{
+class BotitranslationParser extends Parser {
     constructor() {
         super();
     }
 
     async getChapterUrls(dom) {
-        let menu = dom.querySelector("#tocItems");
-        return util.hyperlinksToChapterList(menu);
+        // eslint-disable-next-line
+        let regex = new RegExp("\/book\/[0-9]+");
+        let bookid = dom.baseURI.match(regex)?.[0].slice(6);
+        let data = (await HttpClient.fetchJson("https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/page?sortDirection=ASC&bookId=" + bookid + "&pageNumber=1&pageSize=100")).json;
+        let totalCount = data.data.totalCount;
+        if (totalCount > 100) {
+            data = (await HttpClient.fetchJson("https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/page?sortDirection=ASC&bookId=" + bookid + "&pageNumber=1&pageSize=" + totalCount)).json;
+        }
+        let ChapterArray = data.data.list;
+        let ChapterArrayFree = ChapterArray.map(a => ({
+            sourceUrl: "https://www.botitranslation.com/chapter/" + a.id, 
+            title: a.title, 
+            isIncludeable: (a.paywallStatus == "free" && a.tier == 0)
+        }));
+        return ChapterArrayFree;
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
+        return Parser.findConstructedContent(dom);
     }
 
     extractTitleImpl(dom) {
@@ -23,11 +37,6 @@ class BotitranslationParser extends Parser{
     extractAuthor(dom) {
         let authorLabel = dom.querySelector(".author-name");
         return authorLabel?.textContent ?? super.extractAuthor(dom);
-    }
-
-    removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "p > br");
-        super.removeUnwantedElementsFromContentElement(element);
     }
 
     findCoverImageUrl(dom) {
@@ -51,10 +60,8 @@ class BotitranslationParser extends Parser{
         let title = newDoc.dom.createElement("h1");
         title.textContent = json.data.title;
         newDoc.content.appendChild(title);
-        let content = new DOMParser().parseFromString(json.data.content, "text/html");
-        for(let n of [...content.body.childNodes]) {
-            newDoc.content.appendChild(n);
-        }
+        let content = util.sanitize(json.data.content);
+        util.moveChildElements(content.body, newDoc.content);
         return newDoc.dom;
     }
 

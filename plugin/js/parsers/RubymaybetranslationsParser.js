@@ -2,7 +2,7 @@
 
 parserFactory.register("rubymaybetranslations.com", () => new RubymaybetranslationsParser());
 
-class RubymaybetranslationsParser extends Parser{
+class RubymaybetranslationsParser extends Parser {
     constructor() {
         super();
     }
@@ -33,7 +33,7 @@ class RubymaybetranslationsParser extends Parser{
     }
 
     preprocessRawDom(webPageDom) {
-        util.removeChildElementsMatchingCss(webPageDom, "#comments");
+        util.removeChildElementsMatchingSelector(webPageDom, "#comments");
     }
 
     getInformationEpubItemChildNodes(dom) {

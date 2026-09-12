@@ -125,8 +125,6 @@ QUnit.test("extractTitle", function (assert) {
     );
     let actual = new NrvnqsrParser().extractTitle(doc);
     assert.equal(actual, "Title 2");
-    actual = new ZirusMusingsParser().extractTitle(doc);
-    assert.equal(actual, "Title 3");
     doc.querySelector("meta").remove();
     actual = new NovelUniverseParser().extractTitle(doc);
     assert.equal(actual, "Title 1");
@@ -156,7 +154,7 @@ QUnit.test("addTitleToContent-text", function (assert) {
 
  QUnit.test("extractLanguage", function (assert) {
     let dom = new DOMParser().parseFromString(
-        "<html lang=\"cn\">"+
+        "<html lang=\"cn-Hans-CN\">"+
         "<head><title> Title 1 </title>"+
         "<meta property=\"og:locale\" content=\"fr\" /></head> " +
         "<body>" +
@@ -170,4 +168,22 @@ QUnit.test("addTitleToContent-text", function (assert) {
     assert.equal(parser.extractLanguage(dom), "cn");
     dom.querySelector("html").removeAttribute("lang");
     assert.equal(parser.extractLanguage(dom), "en");
+ });
+
+  QUnit.test("replaceWpBlockSpacersWithHR", function (assert) {
+    let dom = new DOMParser().parseFromString(
+        "<html lang=\"cn\">"+
+        "<head><title> Title 1 </title>"+
+        "<body>" +
+        "<p>a</p>"+
+        "<div style=\"height:20px\" aria-hidden=\"true\" class=\"wp-block-spacer\" data-original-height=\"20px\"></div>"+
+        "<p>b</p>" +
+        "<div style=\"height:20px\" aria-hidden=\"true\" class=\"wp-block-spacer\" data-original-height=\"20px\"></div>"+
+        "</body></html>",
+        "text/html"
+    );
+    let parser = new Parser();
+    parser.replaceWpBlockSpacersWithHR(dom.body);
+    let actual = dom.body.innerHTML;
+    assert.equal(actual, "<p>a</p><hr><p>b</p><hr>");
  });

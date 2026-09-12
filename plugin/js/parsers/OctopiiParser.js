@@ -2,7 +2,7 @@
 
 parserFactory.register("octopii.co", () => new OctopiiParser());
 
-class OctopiiParser extends Parser{
+class OctopiiParser extends Parser {
     constructor() {
         super();
     }
@@ -29,7 +29,7 @@ class OctopiiParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, ".btn-show-more");
+        util.removeChildElementsMatchingSelector(node, ".btn-show-more");
         return node;
     }
 }

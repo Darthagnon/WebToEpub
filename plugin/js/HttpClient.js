@@ -8,28 +8,33 @@ class FetchErrorHandler {
     }
 
     makeFailMessage(url, error) {
-        return chrome.i18n.getMessage("htmlFetchFailed", [url, error]);
+        return UIText.Error.htmlFetchFailed(url, error);
     }
 
     makeFailCanRetryMessage(url, error) {
         return this.makeFailMessage(url, error) + " " +
-            chrome.i18n.getMessage("httpFetchCanRetry");
+            UIText.Warning.httpFetchCanRetry;
     }
 
     getCancelButtonText() {
-        return chrome.i18n.getMessage("__MSG_button_error_Cancel__");
+        return UIText.Common.cancel;
     }
 
     static cancelButtonText() {
-        return chrome.i18n.getMessage("__MSG_button_error_Cancel__");
+        return UIText.Common.cancel;
     }
 
     onFetchError(url, error) {
         return Promise.reject(new Error(this.makeFailMessage(url, error.message)));
     }
 
-    onResponseError(url, wrapOptions, response) {
-        let failError = new Error(this.makeFailMessage(url, response.status));
+    onResponseError(url, wrapOptions, response, errorMessage) {
+        let failError;
+        if (errorMessage) {
+            failError = new Error(errorMessage);
+        } else {
+            failError = new Error(this.makeFailMessage(response.url, response.status));
+        }
         let retry = FetchErrorHandler.getAutomaticRetryBehaviourForStatus(response);
         if (retry.retryDelay.length === 0) {
             return Promise.reject(failError);
@@ -54,14 +59,14 @@ class FetchErrorHandler {
     promptUserForRetry(url, wrapOptions, response, failError) {
         let msg;
         if (wrapOptions.retry.HTTP === 403) { 
-            msg = new Error(chrome.i18n.getMessage("warning403ErrorResponse", new URL(response.url).hostname) + this.makeFailCanRetryMessage(url, response.status));
+            msg = new Error(UIText.Warning.warning403ErrorResponse(new URL(response.url).hostname) + this.makeFailCanRetryMessage(url, response.status));
         } else {
             msg = new Error(new Error(this.makeFailCanRetryMessage(url, response.status)));
         }
         let cancelLabel = this.getCancelButtonText();
-        return new Promise(function(resolve, reject) {
+        return new Promise((resolve, reject) => {
             if (wrapOptions.retry.HTTP === 403) {
-                msg.openurl = url;
+                msg.openurl = response.url;
                 msg.blockurl = url;
             }
             msg.retryAction = () => resolve(HttpClient.wrapFetchImpl(url, wrapOptions));
@@ -80,31 +85,37 @@ class FetchErrorHandler {
     static getAutomaticRetryBehaviourForStatus(response) {
         // seconds to wait before each retry (note: order is reversed)
         let retryDelay = [120, 60, 30, 15];
-        switch(response.status) {
-        case 403:
-            return {retryDelay: [1], promptUser: true, HTTP: 403};
-        case 429:
-            FetchErrorHandler.show429Error(response);
-            return {retryDelay: retryDelay, promptUser: true};
-        case 445:
+        switch (response.status) {
+            case 403:
+                return {retryDelay: [1], promptUser: true, HTTP: 403};
+            case 429:
+                FetchErrorHandler.show429Error(response);
+                return {retryDelay: retryDelay, promptUser: true};
+            case 445:
             //Random Unique exception thrown on Webnovel/Qidian. Not part of w3 spec.
-            return {retryDelay: retryDelay, promptUser: false};
-        case 509:
+                return {retryDelay: retryDelay, promptUser: false};
+            case 509:
             // server asked for rate limiting
-            return {retryDelay: retryDelay, promptUser: true};
-        case 500:
+                return {retryDelay: retryDelay, promptUser: true};
+            case 500:
             // is fault at server, retry might clear
-            return {retryDelay: retryDelay, promptUser: false};
-        case 502: 
-        case 503: 
-        case 504:
-        case 520:
-        case 522:
+                return {retryDelay: retryDelay, promptUser: false};
+            case 502: 
+            case 503: 
+            case 504:
+            case 520:
+            case 522:
             // intermittant fault
-            return {retryDelay: retryDelay, promptUser: true};
-        default:
+                return {retryDelay: retryDelay, promptUser: true};
+            case 524:
+            // claudflare random error
+                return {retryDelay: [1], promptUser: true};
+            case 999:
+            // custom WebToEpub error (some api's fail and a few seconds later it is a success)
+                return {retryDelay: response.retryDelay, promptUser: false};
+            default:
             // it's dead Jim
-            return {retryDelay: [], promptUser: false};
+                return {retryDelay: [], promptUser: false};
         }
     }
 
@@ -112,24 +123,24 @@ class FetchErrorHandler {
         let host = new URL(response.url).hostname;
         if (!FetchErrorHandler.rateLimitedHosts.has(host)) {
             FetchErrorHandler.rateLimitedHosts.add(host);
-            alert(chrome.i18n.getMessage("warning429ErrorResponse", host));
+            alert(UIText.Warning.warning429ErrorResponse(host));
         }
     }
 }
 FetchErrorHandler.rateLimitedHosts = new Set();
 
-class FetchImageErrorHandler extends FetchErrorHandler{
+class FetchImageErrorHandler extends FetchErrorHandler { // eslint-disable-line no-unused-vars
     constructor(parentPageUrl) {
         super();
         this.parentPageUrl = parentPageUrl;
     }
 
     makeFailMessage(url, error) {
-        return chrome.i18n.getMessage("imageFetchFailed", [url, this.parentPageUrl, error]);
+        return UIText.Error.imageFetchFailed(url, this.parentPageUrl, error);
     }
 
     getCancelButtonText() {
-        return chrome.i18n.getMessage("__MSG_button_error_Skip__");
+        return UIText.Common.skip;
     }
 }
 
@@ -145,7 +156,7 @@ class HttpClient {
         if (wrapOptions == null) {
             wrapOptions = {
                 errorHandler: new FetchErrorHandler()
-            }
+            };
         }
         if (wrapOptions.errorHandler == null) {
             wrapOptions.errorHandler = new FetchErrorHandler();
@@ -165,9 +176,12 @@ class HttpClient {
     }
 
     static fetchJson(url, fetchOptions) {
+        let parser = fetchOptions?.parser;
+        delete fetchOptions?.parser;
         let wrapOptions = {
             responseHandler: new FetchJsonResponseHandler(),
-            fetchOptions: fetchOptions
+            fetchOptions: fetchOptions,
+            parser: parser
         };
         return HttpClient.wrapFetchImpl(url, wrapOptions);
     }
@@ -180,7 +194,12 @@ class HttpClient {
     }
 
     static async wrapFetchImpl(url, wrapOptions) {
-        if (BlockedHostNames.has(new URL(url).hostname)) {
+        let hostname = new URL(url).hostname;
+        if (HttpClient.blockedSites.has(hostname)) {
+            let skipurlerror = new Error(UIText.Warning.parserDisabledNotification);
+            return wrapOptions.errorHandler.onFetchError(url, skipurlerror);
+        }
+        if (BlockedHostNames.has(hostname)) {
             let skipurlerror = new Error("!Blocked! URL skipped because the user blocked the site");
             return wrapOptions.errorHandler.onFetchError(url, skipurlerror);
         }
@@ -194,7 +213,16 @@ class HttpClient {
         try
         {
             let response = await fetch(url, wrapOptions.fetchOptions);
-            return HttpClient.checkResponseAndGetData(url, wrapOptions, response)
+            let ret = await HttpClient.checkResponseAndGetData(url, wrapOptions, response);
+            if (wrapOptions.parser?.isNoContentToError403AndContentNull(ret)) {
+                let CustomNoContentToError403Response = wrapOptions.parser.setNoContentToError403Response(url, wrapOptions, ret);
+                return wrapOptions.errorHandler.onResponseError(CustomNoContentToError403Response.url, CustomNoContentToError403Response.wrapOptions, CustomNoContentToError403Response. response, CustomNoContentToError403Response.errorMessage);
+            }
+            if (wrapOptions.parser?.isCustomError(ret)) {
+                let CustomErrorResponse = wrapOptions.parser.setCustomErrorResponse(url, wrapOptions, ret);
+                return wrapOptions.errorHandler.onResponseError(CustomErrorResponse.url, CustomErrorResponse.wrapOptions, CustomErrorResponse.response, CustomErrorResponse.errorMessage);
+            }
+            return ret;
         }
         catch (error)
         {
@@ -203,13 +231,32 @@ class HttpClient {
     }
 
     static checkResponseAndGetData(url, wrapOptions, response) {
-        if(!response.ok) {
+        if (!response.ok) {
             return wrapOptions.errorHandler.onResponseError(url, wrapOptions, response);
         } else {
             let handler = wrapOptions.responseHandler;
             handler.setResponse(response);
             return handler.extractContentFromResponse(response);
         }
+    }
+
+    static async setDeclarativeNetRequestRules(RulesArray) {
+        let url = chrome.runtime.getURL("").split("/").filter(a => a != "");
+        let id = url[url.length - 1];
+        for (let i = 0; i < RulesArray.length; i++) {
+            //limit rule to only webtoepub domain to prevent potiential security problems
+            RulesArray[i].condition.initiatorDomains = [id];
+        }
+        let oldRules = await chrome.declarativeNetRequest.getSessionRules();
+        //In firefox i had declarativeNetRequest.getSessionRules() fail with undefined
+        if (oldRules == null) {
+            oldRules = [];
+        }
+        let oldRuleIds = oldRules.map(rule => rule.id);
+        await chrome.declarativeNetRequest.updateSessionRules({
+            removeRuleIds: oldRuleIds,
+            addRules: RulesArray
+        });
     }
 
     static async setPartitionCookies(url) {
@@ -228,7 +275,7 @@ class HttpClient {
             let cookies = "";
             if (!util.isFirefox()) {
                 cookies = await chrome.cookies.getAll({domain: urlparts[urlparts.length-2]+"."+urlparts[urlparts.length-1],partitionKey: {}});
-            }else{
+            } else {
                 cookies = await browser.cookies.getAll({domain: urlparts[urlparts.length-2]+"."+urlparts[urlparts.length-1],partitionKey: {}});
             }
             cookies = cookies.filter(item => item.partitionKey != undefined);
@@ -242,11 +289,13 @@ class HttpClient {
             }));
         } catch {
             // Probably running browser that doesn't support partitionKey, e.g. Kiwi
+            console.log("failed to set cookie");
         } 
     }
 }
 
 let BlockedHostNames = new Set();
+HttpClient.blockedSites = new Set();
 
 class FetchResponseHandler {
     isHtml() {

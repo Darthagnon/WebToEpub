@@ -6,9 +6,9 @@
 /*
     For our purposes, an EPUB only contains two types of content file: XHTML and image.
     - The HTML files are in reading order (i.e. Appear in same order as spine and table of contents (ToC))
-    - If a HTML file entry has a "title" element, it will appear in the ToC
-    - Stand alone images (e.g. Cover) will have a XHTML entry that points to the image.
-    - First image, (if there are any) is be the cover image
+    - If an HTML file entry has a "title" element, it will appear in the ToC
+    - Stand-alone images (e.g. Cover) will have an XHTML entry that points to the image.
+    - First image, (if there are any) will be the cover image
 */
 
 /// <param name="uuid" type="string">identifier for this EPUB.  (i.e. "origin" URL story was downloaded from)</param>
@@ -37,20 +37,17 @@ class EpubPacker {
     }
 
     assemble(epubItemSupplier) {
-        let that = this;
-        let zipFile = new JSZip();
-        that.addRequiredFiles(zipFile);
-        zipFile.file("OEBPS/content.opf", that.buildContentOpf(epubItemSupplier), { compression: "DEFLATE" });
-        zipFile.file("OEBPS/toc.ncx", that.buildTableOfContents(epubItemSupplier), { compression: "DEFLATE" });
+        let zipFileWriter = new zip.BlobWriter("application/epub+zip");
+        let zipWriter = new zip.ZipWriter(zipFileWriter,{useWebWorkers: false,compressionMethod: 8, extendedTimestamp: false});
+        this.addRequiredFiles(zipWriter);
+        zipWriter.add("OEBPS/content.opf", new zip.TextReader(this.buildContentOpf(epubItemSupplier)));
+        zipWriter.add("OEBPS/toc.ncx", new zip.TextReader(this.buildTableOfContents(epubItemSupplier)));
         if (this.version === EpubPacker.EPUB_VERSION_3) {
-            zipFile.file("OEBPS/toc.xhtml", that.buildNavigationDocument(epubItemSupplier), { compression: "DEFLATE" });
+            zipWriter.add("OEBPS/toc.xhtml", new zip.TextReader(this.buildNavigationDocument(epubItemSupplier)));
         }
-        that.packXhtmlFiles(zipFile, epubItemSupplier);
-        zipFile.file(util.styleSheetFileName(), that.metaInfo.styleSheet, { compression: "DEFLATE" });
-        return zipFile.generateAsync({ 
-            type: "blob",
-            mimeType: "application/epub+zip",
-        });
+        this.packContentFiles(zipWriter, epubItemSupplier);
+        zipWriter.add(util.styleSheetFileName(), new zip.TextReader(this.metaInfo.styleSheet));
+        return zipWriter.close();
     }
 
     static addExtensionIfMissing(fileName) {
@@ -60,33 +57,31 @@ class EpubPacker {
 
     // every EPUB must have a mimetype and a container.xml file
     addRequiredFiles(zipFile) {
-        zipFile.file("mimetype", "application/epub+zip");
-        zipFile.file("META-INF/container.xml",
-            "<?xml version=\"1.0\"?>" +
+        zipFile.add("mimetype",  new zip.TextReader("application/epub+zip"),{compressionMethod: 0});
+        zipFile.add("META-INF/container.xml",
+            new zip.TextReader("<?xml version=\"1.0\"?>" +
             "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">" +
                 "<rootfiles>" +
                     "<rootfile full-path=\"OEBPS/content.opf\" media-type=\"application/oebps-package+xml\"/>" +
                 "</rootfiles>" +
-            "</container>"
+            "</container>")
         );
     }
 
     buildContentOpf(epubItemSupplier) {
-        let that = this;
         let ns = "http://www.idpf.org/2007/opf";
         let opf = document.implementation.createDocument(ns, "package", null);
         opf.documentElement.setAttributeNS(null, "version", this.version);
         opf.documentElement.setAttributeNS(null, "unique-identifier", "BookId");
-        that.buildMetaData(opf, epubItemSupplier);
-        that.buildManifest(opf, ns, epubItemSupplier);
-        that.buildSpine(opf, ns, epubItemSupplier);
-        that.buildGuide(opf, ns, epubItemSupplier);
+        this.buildMetaData(opf, epubItemSupplier);
+        this.buildManifest(opf, ns, epubItemSupplier);
+        this.buildSpine(opf, ns, epubItemSupplier);
+        this.buildGuide(opf, ns, epubItemSupplier);
 
         return util.xmlToString(opf);
     }
 
     buildMetaData(opf, epubItemSupplier) {
-        let that = this;
         let opf_ns = "http://www.idpf.org/2007/opf";
         let dc_ns = "http://purl.org/dc/elements/1.1/";
 
@@ -94,27 +89,32 @@ class EpubPacker {
         metadata.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:dc", dc_ns);
         metadata.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:opf", opf_ns);
         opf.documentElement.appendChild(metadata);
-        that.createAndAppendChildNS(metadata, dc_ns, "dc:title", that.metaInfo.title);
-        that.createAndAppendChildNS(metadata, dc_ns, "dc:language", that.metaInfo.language);
-        that.createAndAppendChildNS(metadata, dc_ns, "dc:date", that.getDateForMetaData());
-        if (!util.isNullOrEmpty(that.metaInfo.subject)) {
-            that.createAndAppendChildNS(metadata, dc_ns, "dc:subject", that.metaInfo.subject);
+        this.createAndAppendChildNS(metadata, dc_ns, "dc:title", this.metaInfo.title);
+        this.createAndAppendChildNS(metadata, dc_ns, "dc:language", this.metaInfo.language);
+        let datePublished = this.metaInfo.datePublished || this.getDateForMetaData();
+        this.createAndAppendChildNS(metadata, dc_ns, "dc:date", datePublished);
+        if (!util.isNullOrEmpty(this.metaInfo.subject)) {
+            this.createAndAppendChildNS(metadata, dc_ns, "dc:subject", this.metaInfo.subject);
         }
-        if (!util.isNullOrEmpty(that.metaInfo.description)) {
-            that.createAndAppendChildNS(metadata, dc_ns, "dc:description", that.metaInfo.description);
+        if (!util.isNullOrEmpty(this.metaInfo.description)) {
+            this.createAndAppendChildNS(metadata, dc_ns, "dc:description", this.metaInfo.description);
+        }
+        if (!util.isNullOrEmpty(this.metaInfo.publisher)) {
+            this.createAndAppendChildNS(metadata, dc_ns, "dc:publisher", this.metaInfo.publisher);
         }
 
-        let author = that.createAndAppendChildNS(metadata, dc_ns, "dc:creator", that.metaInfo.author);
-        this.addMetaProperty(metadata, author, "file-as", "creator", that.metaInfo.getFileAuthorAs());
+        let author = this.createAndAppendChildNS(metadata, dc_ns, "dc:creator", this.metaInfo.author);
+        this.addMetaProperty(metadata, author, "file-as", "creator", this.metaInfo.getFileAuthorAs());
         this.addMetaProperty(metadata, author, "role", "creator", "aut");
 
-        if (that.metaInfo.translator !== null) {
-            let translator = that.createAndAppendChildNS(metadata, dc_ns, "dc:contributor", that.metaInfo.translator);
-            this.addMetaProperty(metadata, translator, "file-as", "translator", that.metaInfo.translator);
+        if (this.metaInfo.translator !== null) {
+            let translator = this.createAndAppendChildNS(metadata, dc_ns, "dc:contributor", this.metaInfo.translator);
+            this.addMetaProperty(metadata, translator, "file-as", "translator", this.metaInfo.translator);
             this.addMetaProperty(metadata, translator, "role", "translator", "trl");
         }
 
-        let identifier = that.createAndAppendChildNS(metadata, dc_ns, "dc:identifier", that.metaInfo.uuid);
+        let idText = (this.version === EpubPacker.EPUB_VERSION_3 ? "uri:" : "") + this.metaInfo.uuid;
+        let identifier = this.createAndAppendChildNS(metadata, dc_ns, "dc:identifier", idText);
         identifier.setAttributeNS(null, "id", "BookId");
         if (this.version === EpubPacker.EPUB_VERSION_2) {
             identifier.setAttributeNS(opf_ns, "opf:scheme", "URI");
@@ -127,22 +127,33 @@ class EpubPacker {
         }
 
         let webToEpubVersion = `[https://github.com/dteviot/WebToEpub] (ver. ${util.extensionVersion()})`;
-        let contributor = that.createAndAppendChildNS(metadata, dc_ns, "dc:contributor", webToEpubVersion);
+        let contributor = this.createAndAppendChildNS(metadata, dc_ns, "dc:contributor", webToEpubVersion);
         this.addMetaProperty(metadata, contributor, "role", "packingTool", "bkp");
 
         if (epubItemSupplier.hasCoverImageFile()) {
-            that.appendMetaContent(metadata, opf_ns, "cover", epubItemSupplier.coverImageId());
-        };
-
-        if (that.metaInfo.seriesName !== null) {
-            that.appendMetaContent(metadata, opf_ns, "calibre:series", that.metaInfo.seriesName);
-            that.appendMetaContent(metadata, opf_ns, "calibre:series_index", that.metaInfo.seriesIndex);
+            this.appendMetaContent(metadata, opf_ns, "cover", epubItemSupplier.coverImageId());
         }
 
-        for(let i of epubItemSupplier.manifestItems()) {
-            let source = this.createAndAppendChildNS(metadata, dc_ns, "dc:source", i.sourceUrl);
-            source.setAttributeNS(null, "id", "id." + i.getId());
-        };
+        if (this.metaInfo.seriesName !== null) {
+            this.appendMetaContent(metadata, opf_ns, "calibre:series", this.metaInfo.seriesName);
+            this.appendMetaContent(metadata, opf_ns, "calibre:series_index", this.metaInfo.seriesIndex);
+            if (this.version === EpubPacker.EPUB_VERSION_3) {
+                let series = this.createAndAppendChildNS(metadata, opf_ns, "meta");
+                series.setAttributeNS(null, "property", "belongs-to-collection");
+                series.setAttributeNS(null, "id", "series");
+                series.textContent = this.metaInfo.seriesName;
+                this.addMetaProperty(metadata, series, "collection-type", "series", "series");
+                this.addMetaProperty(metadata, series, "group-position", "series", this.metaInfo.seriesIndex);
+            }
+        }
+
+        for (let i of epubItemSupplier.manifestItems()) {
+            let sourceUrl = util.clearIfDataUri(i.sourceUrl);
+            if (sourceUrl) {  // Only add dc:source if we have a valid URL
+                let source = this.createAndAppendChildNS(metadata, dc_ns, "dc:source", sourceUrl);
+                source.setAttributeNS(null, "id", "id." + i.getId());
+            }
+        }
     }
 
     addMetaProperty(metadata, element, propName, id, value) {
@@ -159,26 +170,27 @@ class EpubPacker {
     }
 
     appendMetaContent(parent, opf_ns, name, content) {
-        let that = this;
-        let meta = that.createAndAppendChildNS(parent, opf_ns, "meta");
-        meta.setAttributeNS(null, "content", content);
+        let meta = this.createAndAppendChildNS(parent, opf_ns, "meta");
+        // Some e-book readers such as the Nook fail to recognize covers if the content
+        // attribute comes before the name attribute. For maximum compatibility move
+        // the name attribute before the content attribute.
         meta.setAttributeNS(null, "name", name);
+        meta.setAttributeNS(null, "content", content);
     }
     
     buildManifest(opf, ns, epubItemSupplier) {
-        let that = this;
-        let manifest = that.createAndAppendChildNS(opf.documentElement, ns, "manifest");
-        for(let i of epubItemSupplier.manifestItems()) {
-            let item = that.addManifestItem(manifest, ns, i.getZipHref(), i.getId(), i.getMediaType());
+        let manifest = this.createAndAppendChildNS(opf.documentElement, ns, "manifest");
+        for (let i of epubItemSupplier.manifestItems()) {
+            let item = this.addManifestItem(manifest, ns, i.getZipHref(), i.getId(), i.getMediaType());
             this.setSvgPropertyForManifestItem(item, i.hasSvg());
-        };
+        }
 
-        that.addManifestItem(manifest, ns, util.styleSheetFileName(), "stylesheet", "text/css");
-        that.addManifestItem(manifest, ns, "OEBPS/toc.ncx", "ncx", "application/x-dtbncx+xml");
+        this.addManifestItem(manifest, ns, util.styleSheetFileName(), "stylesheet", "text/css");
+        this.addManifestItem(manifest, ns, "OEBPS/toc.ncx", "ncx", "application/x-dtbncx+xml");
         if (epubItemSupplier.hasCoverImageFile()) {
-            let item = that.addManifestItem(manifest, ns, EpubPacker.coverImageXhtmlHref(), EpubPacker.coverImageXhtmlId(), "application/xhtml+xml");
+            let item = this.addManifestItem(manifest, ns, EpubPacker.coverImageXhtmlHref(), EpubPacker.coverImageXhtmlId(), "application/xhtml+xml");
             this.setSvgPropertyForManifestItem(item, this.doesCoverHaveSvg(epubItemSupplier));
-        };
+        }
         if (this.version === EpubPacker.EPUB_VERSION_3) {
             let item = this.addManifestItem(manifest, ns, "OEBPS/toc.xhtml", "nav", "application/xhtml+xml");
             item.setAttributeNS(null, "properties", "nav");
@@ -189,8 +201,11 @@ class EpubPacker {
         let item = this.createAndAppendChildNS(manifest, ns, "item");
         let relativeHref = this.makeRelative(href);
         if (mediaType === "image/webp") {
-            let errorMsg = chrome.i18n.getMessage("warningWebpImage", [relativeHref]);
-            ErrorLog.log(errorMsg);
+            let userPreferences = main.getUserPreferences();
+            if (!userPreferences?.disableWebpImageFormatError?.value) {
+                let errorMsg = UIText.Warning.warningWebpImage(relativeHref);
+                ErrorLog.log(errorMsg);
+            }
         }
         item.setAttributeNS(null, "href", relativeHref);
         item.setAttributeNS(null, "id", id);
@@ -211,15 +226,14 @@ class EpubPacker {
     }
 
     buildSpine(opf, ns, epubItemSupplier) {
-        let that = this;
-        let spine = that.createAndAppendChildNS(opf.documentElement, ns, "spine");
+        let spine = this.createAndAppendChildNS(opf.documentElement, ns, "spine");
         spine.setAttributeNS(null, "toc", "ncx");
         if (epubItemSupplier.hasCoverImageFile()) {
-            that.addSpineItemRef(spine, ns, EpubPacker.coverImageXhtmlId());
-        };
-        for(let item of epubItemSupplier.spineItems()) {
-            that.addSpineItemRef(spine, ns, item.getId());
-        };
+            this.addSpineItemRef(spine, ns, EpubPacker.coverImageXhtmlId());
+        }
+        for (let item of epubItemSupplier.spineItems()) {
+            this.addSpineItemRef(spine, ns, item.getId());
+        }
     }
 
     addSpineItemRef(spine, ns, idref) {
@@ -227,26 +241,24 @@ class EpubPacker {
     }
 
     buildGuide(opf, ns, epubItemSupplier) {
-        let that = this;
         if (epubItemSupplier.hasCoverImageFile()) {
-            let guide = that.createAndAppendChildNS(opf.documentElement, ns, "guide");
-            let reference = that.createAndAppendChildNS(guide, ns, "reference");
-            reference.setAttributeNS(null, "href", that.makeRelative(EpubPacker.coverImageXhtmlHref()));
+            let guide = this.createAndAppendChildNS(opf.documentElement, ns, "guide");
+            let reference = this.createAndAppendChildNS(guide, ns, "reference");
+            reference.setAttributeNS(null, "href", this.makeRelative(EpubPacker.coverImageXhtmlHref()));
             reference.setAttributeNS(null, "title", "Cover");
             reference.setAttributeNS(null, "type", "cover");
-        };
+        }
     }
 
     buildTableOfContents(epubItemSupplier) {
-        let that = this;
         let ns = "http://www.daisy.org/z3986/2005/ncx/";
         let ncx = document.implementation.createDocument(ns, "ncx", null);
         ncx.documentElement.setAttribute("version", "2005-1");
-        ncx.documentElement.setAttribute("xml:lang", that.metaInfo.language);
-        let head = that.createAndAppendChildNS(ncx.documentElement, ns, "head");
-        that.buildDocTitle(ncx, ns);
-        let depth = that.buildNavMap(ncx, ns, epubItemSupplier);
-        that.populateHead(head, ns, depth);
+        ncx.documentElement.setAttribute("xml:lang", this.metaInfo.language);
+        let head = this.createAndAppendChildNS(ncx.documentElement, ns, "head");
+        this.buildDocTitle(ncx, ns);
+        let depth = this.buildNavMap(ncx, ns, epubItemSupplier);
+        this.populateHead(head, ns, depth);
 
         return util.xmlToString(ncx);
     }
@@ -274,35 +286,26 @@ class EpubPacker {
     }
 
     populateHead(head, ns, depth) {
-        let that = this;
-        that.buildHeadMeta(head, ns, that.metaInfo.uuid, "dtb:uid");
-        that.buildHeadMeta(head, ns, (depth < 2) ? "2" : depth, "dtb:depth");
-        that.buildHeadMeta(head, ns, "0", "dtb:totalPageCount");
-        that.buildHeadMeta(head, ns, "0", "dtb:maxPageNumber");
-    }
-
-    buildHeadMeta(head, ns, content, name) {
-        let that = this;
-        let meta = that.createAndAppendChildNS(head, ns, "meta");
-        meta.setAttributeNS(null, "content", content);
-        meta.setAttributeNS(null, "name", name);
+        this.appendMetaContent(head, ns, "dtb:uid", (this.version === EpubPacker.EPUB_VERSION_3 ? "uri:" : "") + this.metaInfo.uuid);
+        this.appendMetaContent(head, ns, "dtb:depth", (depth < 2) ? "2" : depth);
+        this.appendMetaContent(head, ns, "dtb:totalPageCount", "0");
+        this.appendMetaContent(head, ns, "dtb:maxPageNumber", "0");
     }
 
     buildDocTitle(ncx, ns) {
-        let that = this;
-        let docTitle = that.createAndAppendChildNS(ncx.documentElement, ns, "docTitle");
-        that.createAndAppendChildNS(docTitle, ns, "text", that.metaInfo.title);
+        let docTitle = this.createAndAppendChildNS(ncx.documentElement, ns, "docTitle");
+        this.createAndAppendChildNS(docTitle, ns, "text", this.metaInfo.title);
     }
 
     populateNavElement(nav, ns, epubItemSupplier) {
         let rootParent = this.createAndAppendChildNS(nav, ns, "ol");
         let parents = new NavPointParentElementsStack(rootParent);
-        for(let chapterInfo of epubItemSupplier.chapterInfo()) {
+        for (let chapterInfo of epubItemSupplier.chapterInfo()) {
             let parent = parents.findParentElement(chapterInfo.depth);
             let nextLevel = this.buildNavListItem(parent, ns, chapterInfo);
             parents.addElement(chapterInfo.depth, nextLevel);
         }
-        this.removeEmptyNavLists(rootParent)
+        this.removeEmptyNavLists(rootParent);
     }
 
     buildNavListItem(parent, ns, chapterInfo) {
@@ -322,45 +325,41 @@ class EpubPacker {
     }
 
     buildNavMap(ncx, ns, epubItemSupplier) {
-        let that = this;
-        let navMap = that.createAndAppendChildNS(ncx.documentElement, ns, "navMap");
+        let navMap = this.createAndAppendChildNS(ncx.documentElement, ns, "navMap");
         let parents = new NavPointParentElementsStack(navMap);
         let playOrder = 0;
         let id = 0;
         let lastChapterSrc = null;
-        for(let chapterInfo of epubItemSupplier.chapterInfo()) {
+        for (let chapterInfo of epubItemSupplier.chapterInfo()) {
             let parent = parents.findParentElement(chapterInfo.depth);
-            if(lastChapterSrc !== chapterInfo.src){
+            if (lastChapterSrc !== chapterInfo.src) {
                 ++playOrder;
             }
-            let navPoint = that.buildNavPoint(parent, ns, playOrder, ++id, chapterInfo);
+            let navPoint = this.buildNavPoint(parent, ns, playOrder, ++id, chapterInfo);
             lastChapterSrc = chapterInfo.src;
             parents.addElement(chapterInfo.depth, navPoint);
-        };
+        }
         return parents.maxDepth;
     }
 
     buildNavPoint(parent, ns, playOrder, id, chapterInfo) {
-        let that = this;
-        let navPoint = that.createAndAppendChildNS(parent, ns, "navPoint");
-        navPoint.setAttributeNS(null, "id", that.makeId(util.zeroPad(id)));
+        let navPoint = this.createAndAppendChildNS(parent, ns, "navPoint");
+        navPoint.setAttributeNS(null, "id", this.makeId(util.zeroPad(id)));
         navPoint.setAttributeNS(null, "playOrder", playOrder);
-        let navLabel = that.createAndAppendChildNS(navPoint, ns, "navLabel");
-        that.createAndAppendChildNS(navLabel, ns, "text", chapterInfo.title);
-        that.createAndAppendChildNS(navPoint, ns, "content").setAttributeNS(null, "src", that.makeRelative(chapterInfo.src));
+        let navLabel = this.createAndAppendChildNS(navPoint, ns, "navLabel");
+        this.createAndAppendChildNS(navLabel, ns, "text", chapterInfo.title);
+        this.createAndAppendChildNS(navPoint, ns, "content").setAttributeNS(null, "src", this.makeRelative(chapterInfo.src));
         return navPoint;
     }
 
-    packXhtmlFiles(zipFile, epubItemSupplier) {
-        let zipOptions = { compression: "DEFLATE" };
-        for(let file of epubItemSupplier.files()) {
-            let content = file.fileContentForEpub(this.emptyDocFactory, this.contentValidator);
-            zipFile.file(file.getZipHref(), content, zipOptions);
-        };
+    packContentFiles(zipWriter, epubItemSupplier) {
+        for (let file of epubItemSupplier.files()) {
+            file.packInEpub(zipWriter, this.emptyDocFactory, this.contentValidator);
+        }
         if (epubItemSupplier.hasCoverImageFile()) {
-            let fileContent = epubItemSupplier.makeCoverImageXhtmlFile(this.emptyDocFactory);
-            zipFile.file(EpubPacker.coverImageXhtmlHref(), fileContent, zipOptions);
-        };
+            let fileContent = epubItemSupplier.makeCoverImageXhtmlFile(this.emptyDocFactory, "Cover");
+            zipWriter.add(EpubPacker.coverImageXhtmlHref(), new zip.TextReader(fileContent));
+        }
     }
 
     createAndAppendChildNS(element, ns, name, data) {
@@ -408,26 +407,24 @@ class NavPointParentElementsStack {
     }
 
     findParentElement(depth) {
-        let that = this;
-        let index = that.parents.length - 1;
-        while (depth <= that.parents[index].depth) {
+        let index = this.parents.length - 1;
+        while (depth <= this.parents[index].depth) {
             --index;
-        };
-        return that.parents[index].element;
+        }
+        return this.parents[index].element;
     }
 
     addElement(depth, element) {
-        let that = this;
         // discard any elements that are nested >= this one
-        while (depth <= that.parents[that.parents.length - 1].depth) {
-            that.parents.pop();
+        while (depth <= this.parents[this.parents.length - 1].depth) {
+            this.parents.pop();
         }
-        that.parents.push({
+        this.parents.push({
             element: element,
             depth: depth
         });
-        if (that.maxDepth < that.parents.length - 1) {
-            that.maxDepth = that.parents.length - 1;
+        if (this.maxDepth < this.parents.length - 1) {
+            this.maxDepth = this.parents.length - 1;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 parserFactory.register("hui3r.wordpress.com", () => new Hui3rParser());
 
-class Hui3rParser extends WordpressBaseParser{
+class Hui3rParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -17,7 +17,7 @@ class Hui3rParser extends WordpressBaseParser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "#jp-post-flair, footer.entry-meta");
+        util.removeChildElementsMatchingSelector(element, "#jp-post-flair, footer.entry-meta");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

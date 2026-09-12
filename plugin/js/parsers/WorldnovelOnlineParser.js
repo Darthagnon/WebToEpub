@@ -2,7 +2,7 @@
 
 parserFactory.register("worldnovel.online", () => new WorldnovelOnlineParser());
 
-class WorldnovelOnlineParser extends Parser{
+class WorldnovelOnlineParser extends Parser {
     constructor() {
         super();
     }
@@ -11,7 +11,7 @@ class WorldnovelOnlineParser extends Parser{
         let chapters = [];
         let category = dom.body.getAttribute("attr");
         let numTocPages = [...dom.querySelectorAll("div[data-paged]")].length;
-        for(let page = 1; page <= numTocPages; ++page) {
+        for (let page = 1; page <= numTocPages; ++page) {
             let url = "https://www.worldnovel.online/wp-json/novel-id/v1/dapatkan_chapter_dengan_novel?category=" + 
                 category + "&perpage=100&order=ASC&paged=" + page;
             let partialList = (await HttpClient.fetchJson(url)).json
@@ -39,7 +39,7 @@ class WorldnovelOnlineParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".code-block, ins, .chapternav, a[href='javascript:void(0)']");
+        util.removeChildElementsMatchingSelector(element, ".code-block, ins, .chapternav, a[href='javascript:void(0)']");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

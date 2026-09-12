@@ -2,7 +2,7 @@
 
 parserFactory.register("dummynovels.com", () => new DummynovelsParser());
 
-class DummynovelsParser extends Parser{
+class DummynovelsParser extends Parser {
     constructor() {
         super();
     }
@@ -36,6 +36,6 @@ class DummynovelsParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "script, iframe, .code-block");
+        util.removeChildElementsMatchingSelector(node, "script, iframe, .code-block");
     }    
 }

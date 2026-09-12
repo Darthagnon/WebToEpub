@@ -2,7 +2,7 @@
 
 parserFactory.register("peachpuff.in", () => new PeachpuffParser());
 
-class PeachpuffParser extends Parser{
+class PeachpuffParser extends Parser {
     constructor() {
         super();
     }
@@ -21,7 +21,7 @@ class PeachpuffParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".category-post-dropdown-container, .code-block");
+        util.removeChildElementsMatchingSelector(element, ".category-post-dropdown-container, .code-block");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

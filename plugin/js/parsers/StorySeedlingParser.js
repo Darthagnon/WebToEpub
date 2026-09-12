@@ -6,6 +6,7 @@ parserFactory.register("storyseedling.com", () => new StorySeedlingParser());
 class StorySeedlingParser extends Parser {
     constructor() {
         super();
+        this.minimumThrottle = 5000;
     }
 
     async getChapterUrls(dom) {
@@ -27,8 +28,7 @@ class StorySeedlingParser extends Parser {
         );
     }
 
-    populateUI(dom) {
-        super.populateUI(dom);
+    populateUIImpl() {
         document.getElementById("removeAuthorNotesRow").hidden = false; 
     }
 

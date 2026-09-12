@@ -1,7 +1,7 @@
 "use strict";
 
 /** Class that handles UI for selecting cover image */
-class CoverImageUI {
+class CoverImageUI { // eslint-disable-line no-unused-vars
     constructor() {
     }
 
@@ -27,14 +27,14 @@ class CoverImageUI {
     /** clear all UI elements associated with selecting the Cover Image */
     static clearUI() {
         CoverImageUI.clearImageTable();
-        CoverImageUI.setCoverImageUrl(null);
+        CoverImageUI.setCoverImageUrl("");
     }
 
     /** remove all images from the table of images to pick from */
     static clearImageTable() {
         let imagesTable = CoverImageUI.getImageTableElement();
         while (imagesTable.children.length > 0) {
-            imagesTable.removeChild(imagesTable.children[imagesTable.children.length - 1])
+            imagesTable.removeChild(imagesTable.children[imagesTable.children.length - 1]);
         }
     }
 
@@ -46,10 +46,10 @@ class CoverImageUI {
         let imagesTable = CoverImageUI.getImageTableElement();
         let checkBoxIndex = 0;
         if (0 === images.length) {
-            imagesTable.parentElement.appendChild(document.createTextNode(chrome.i18n.getMessage("noImagesFoundLabel")));
+            imagesTable.parentElement.appendChild(document.createTextNode(UIText.CoverImage.noImagesFoundLabel));
         }
         else {
-            images.forEach(function (imageInfo) {
+            images.forEach((imageInfo) => {
                 let row = document.createElement("tr");
         
                 // add checkbox
@@ -76,9 +76,9 @@ class CoverImageUI {
         let checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.id = "setCoverCheckBox" + checkBoxIndex;
-        checkbox.onclick = function() { CoverImageUI.onImageClicked(checkbox.id, sourceUrl); };
+        checkbox.onclick = () => { CoverImageUI.onImageClicked(checkbox.id, sourceUrl); };
         label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(chrome.i18n.getMessage("setCover")));
+        label.appendChild(document.createTextNode(UIText.CoverImage.setCover));
 
         // default to first image as cover image
         if (checkBoxIndex === 0) {
@@ -98,7 +98,7 @@ class CoverImageUI {
 
             // uncheck any other checked boxes
             let imagesTable = CoverImageUI.getImageTableElement();
-            for(let box of imagesTable.querySelectorAll("input")) {
+            for (let box of imagesTable.querySelectorAll("input")) {
                 if (box.id !== checkboxId) {
                     box.checked = false;
                 }

@@ -7,7 +7,7 @@ parserFactory.register("lnreader.org", () => new LightnovelreaderParser());
 //dead url
 parserFactory.register("readlitenovel.com", () => new LightnovelreaderParser());
 
-class LightnovelreaderParser extends Parser{
+class LightnovelreaderParser extends Parser {
     constructor() {
         super();
     }
@@ -26,7 +26,7 @@ class LightnovelreaderParser extends Parser{
     }
 
     extractAuthor(dom) {
-        let authorLabel = [...dom.querySelectorAll("a[href*='author']")].map(x => x.textContent.trim())
+        let authorLabel = [...dom.querySelectorAll("a[href*='author']")].map(x => x.textContent.trim());
         return (authorLabel.length === 0) ? super.extractAuthor(dom) : authorLabel.join(", ");
     }
 
@@ -34,7 +34,7 @@ class LightnovelreaderParser extends Parser{
         let toRemove = [...element.querySelectorAll("center, p")]
             .filter(s => s.textContent.trim().toLowerCase() === "sponsored content");
         util.removeElements(toRemove);
-        util.removeChildElementsMatchingCss(element, ".display-hide, .hidden");
+        util.removeChildElementsMatchingSelector(element, ".display-hide, .hidden");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

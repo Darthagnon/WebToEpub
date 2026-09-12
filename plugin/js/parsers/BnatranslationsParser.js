@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("bnatranslations.com", () => new BnatranslationsParser());
 
-class BnatranslationsParser extends Parser{
+class BnatranslationsParser extends Parser {
     constructor() {
         super();
     }
@@ -30,11 +30,11 @@ class BnatranslationsParser extends Parser{
     }
 
     preprocessRawDom(chapterDom) {
-        util.removeChildElementsMatchingCss(chapterDom, ".elementor-button-wrapper");
+        util.removeChildElementsMatchingSelector(chapterDom, ".elementor-button-wrapper");
         let containers = [...chapterDom.querySelectorAll("article .post__content .elementor-widget-container")];
         let container = containers[0];
         let i = 0;
-        while(++i < containers.length) {
+        while (++i < containers.length) {
             let hasFollowButton = containers[i].querySelector(".wordpress-follow-button") != null;
             if (hasFollowButton) {
                 break;

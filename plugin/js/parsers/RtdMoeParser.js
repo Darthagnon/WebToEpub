@@ -1,8 +1,8 @@
 "use strict";
 
-parserFactory.register("rtd.moe", function() { return new RtdMoeParser() });
+parserFactory.register("rtd.moe", () => new RtdMoeParser());
 
-class RtdMoeParser extends Parser{
+class RtdMoeParser extends Parser {
     constructor() {
         super();
     }
@@ -10,18 +10,18 @@ class RtdMoeParser extends Parser{
     getChapterUrls(dom) {
         let menu = this.findContent(dom);
         return Promise.resolve(util.hyperlinksToChapterList(menu));
-    };
+    }
 
     findContent(dom) {
         return dom.querySelector("div#content");
-    };
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("h1");
-    };
+    }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div.wp-post-navigation, div.tags, table#amazon-polly-audio-table");
+        util.removeChildElementsMatchingSelector(element, "div.wp-post-navigation, div.tags, table#amazon-polly-audio-table");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

@@ -3,8 +3,8 @@
 
 
 /** Functions to help debugging.  Not included in release product */
-class DebugUtil {
-    constructor () {
+class DebugUtil { // eslint-disable-line no-unused-vars
+    constructor() {
     }
 
     static byteToHex(e) {
@@ -14,7 +14,7 @@ class DebugUtil {
 
     static bufToHex(buf) {
         return new Uint8Array(buf)
-            .reduce((p, c) => p + DebugUtil.byteToHex(c), "")
+            .reduce((p, c) => p + DebugUtil.byteToHex(c), "");
     }
 }
 

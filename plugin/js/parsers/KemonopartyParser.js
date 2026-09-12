@@ -1,27 +1,42 @@
 "use strict";
 
-parserFactory.register("kemono.su", () => new KemonopartyParser());
+parserFactory.registerRule(
+    (url, dom) => KemonopartyParser.isKemono(dom),
+    () => new KemonopartyParser()
+);
 
-class KemonopartyParser extends Parser{
+class KemonopartyParser extends Parser {
     constructor() {
         super();
+    }
+    
+    static isKemono(dom) {
+        let baseurl = new URL(dom.baseURI); 
+        return baseurl.hostname.split(".")[0] == "kemono";
     }
 
     async getChapterUrls(dom, chapterUrlsUI) {
         let chapters = [];
-        let urlsOfTocPages = this.getUrlsOfTocPages(dom);
-        for(let url of urlsOfTocPages) {
+        let urlsOfTocPages = await this.getUrlsOfTocPages(dom);
+        let baseUrl = new URL(dom.baseURI);
+        baseUrl.searchParams.delete("tag");
+        for (let url of urlsOfTocPages) {
             await this.rateLimitDelay();
-            let json = (await HttpClient.fetchJson(url)).json;
-            let partialList = this.extractPartialChapterList(json);
+            let json = await this.fetchJson(url);
+            let partialList = this.extractPartialChapterList(json, baseUrl);
             chapterUrlsUI.showTocProgress(partialList);
             chapters = chapters.concat(partialList);
+            if (partialList.length == 0) {
+                break;
+            }
         }
         return chapters.reverse();
-    };
+    }
 
     async fetchChapter(url) {
-        let json = (await HttpClient.fetchJson(url)).json;
+        let jsonUrl = new URL(url);
+        jsonUrl.pathname = "/api/v1" + jsonUrl.pathname;
+        let json = await this.fetchJson(jsonUrl.href);
         return this.buildChapter(json, url);
     }
 
@@ -30,10 +45,21 @@ class KemonopartyParser extends Parser{
         let header = newDoc.dom.createElement("h1");
         newDoc.content.appendChild(header);
         header.textContent = json.post.title;
-        let content = new DOMParser().parseFromString(json.post.content, "text/html");
-        for(let n of [...content.body.childNodes]) {
-            newDoc.content.appendChild(n);
+        let attachments = json.attachments;
+        if (attachments && attachments.length > 0) {
+            let attachHeader = newDoc.dom.createElement("h2");
+            newDoc.content.appendChild(attachHeader);
+            attachHeader.textContent = "Attachments";
+            for (let att of attachments) {
+                let link = newDoc.dom.createElement("a");
+                link.href = att.server + "/data" + att.path;
+                link.textContent = att.name;
+                newDoc.content.appendChild(link);
+                newDoc.content.appendChild(newDoc.dom.createElement("br"));
+            }
         }
+        let content = util.sanitize(json.post.content);
+        util.moveChildElements(content.body, newDoc.content);        
         this.copyImagesIntoContent(newDoc.dom);
         this.addFileImages(json, newDoc);
         return newDoc.dom;
@@ -44,37 +70,63 @@ class KemonopartyParser extends Parser{
         return cover.src ?? null;
     }
 
+    async getUrlsOfTocPages(dom) {
+        let baseurl = new URL(dom.baseURI);
+        let urlbuilder = new URL(dom.baseURI);
 
-    getUrlsOfTocPages(dom) {
-        let urls = [];
-        let paginator = dom.querySelector("div.paginator menu");
-        if (paginator === null) {
-            return urls;
+        for (const [key] of baseurl.searchParams.entries()) {
+            urlbuilder.searchParams.delete(key);
         }
-        let pages = [...paginator.querySelectorAll("a:not(.next)")];
-        // add /api/v1/ right after the domain name
-        pages[pages.length - 1].href = pages[pages.length - 1].href.replace("https://kemono.su", "https://kemono.su/api/v1");
-        // add /posts-legacy right before the query string
-        pages[pages.length - 1].href = pages[pages.length - 1].href.replace("?", "/posts-legacy?");
-        let url = new URL(pages[pages.length - 1]);
-        let lastPageOffset = url.searchParams.get("o");
-        for(let i = 0; i <= lastPageOffset; i += 50) {
-            url.searchParams.set("o", i);
-            urls.push(url.href);
+        let regex = new RegExp("/?$");
+        urlbuilder.href = urlbuilder.href.replace(`https://${baseurl.hostname}`, `https://${baseurl.hostname}/api/v1`).replace(regex, "/posts");
+        
+        for (const [key, value] of baseurl.searchParams.entries()) {
+            urlbuilder.searchParams.set(key, value);
+        }
+        urlbuilder.searchParams.set("o", 0);
+        let lastPageOffset = await this.getLastPageOffset(dom, urlbuilder);
+        let urls = [];
+        for (let i = 0; i <= lastPageOffset; i += 50) {
+            urlbuilder.searchParams.set("o", i);
+            urls.push(urlbuilder.href);
         }
         return urls;
     }
 
-    extractPartialChapterList(data) {
-        // get href from the dom, not the url of the page
+    async getLastPageOffset(dom, urlbuilder) {
+        let offsets = [...dom.querySelectorAll("#paginator-top a")];
+        offsets = offsets.map(item => new URL(item?.href)?.searchParams?.get("o"));
+        offsets = offsets.filter(item => item !== null);
+        offsets = offsets.map(item => parseInt(item));
+        return 0 < offsets.length
+            ? Math.max(...offsets)
+            : await this.getLastPageOffsetAlternative(urlbuilder);
+    }
+
+    async getLastPageOffsetAlternative(urlbuilder) {
+        let regex1 = new RegExp("/posts?.+");
+        let profile = await this.fetchJson(urlbuilder.href.replace(regex1, "/profile"));
+        return profile?.post_count;
+    }
+
+    async fetchJson(url) {
+        let options = {
+            headers: {
+                "Accept": "text/css"
+            }
+        };
+        return (await HttpClient.fetchJson(url, options)).json;
+    }
+
+    extractPartialChapterList(data, baseUrl) {
+        let buildUrl = (row) => {
+            baseUrl.pathname = `/${row.service}/user/${row.user}/post/${row.id}`;
+            return baseUrl.href;
+        };
         try {
-            let authorid = data.props.id;
-            let ids = data.results.map(result => result.id);
-            let titles = data.results.map(result => result.title);
-            let urls = ids.map(id => `https://kemono.su/api/v1/patreon/user/${authorid}/post/${id}`);
-            return urls.map((url, i) => ({
-                sourceUrl: url,
-                title: titles[i]
+            return data.map((row) => ({
+                sourceUrl: buildUrl(row),
+                title: row.title
             }));
         } catch (e) {
             return [];
@@ -82,13 +134,13 @@ class KemonopartyParser extends Parser{
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
+        return Parser.findConstructedContent(dom);
     }
 
     copyImagesIntoContent(dom) {
         let content = this.findContent(dom);
         let images = [...dom.querySelectorAll("div.post__files div.post__thumbnail figure a img")];
-        for(let img of images) {
+        for (let img of images) {
             content.append(img);
         }
     }
@@ -105,7 +157,7 @@ class KemonopartyParser extends Parser{
         let filesheader = newDoc.dom.createElement("h2");
         newDoc.content.appendChild(filesheader);
         filesheader.textContent = "Files";
-        for(let i of images) {
+        for (let i of images) {
             let img = newDoc.dom.createElement("img");
             img.src = i.server + "/data" + i.path;
             newDoc.content.append(img);

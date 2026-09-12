@@ -6,7 +6,7 @@
 /**
  * For sites that have multiple chapters per web page, this can minimize HTTP calls
  */
-class FetchCache {
+class FetchCache { // eslint-disable-line no-unused-vars
     constructor() {
         this.path = null;
         this.dom = null;
@@ -38,11 +38,11 @@ class ParserState {
     setPagesToFetch(urls) {
         let nextPrevChapters = new Set();
         this.webPages = new Map();
-        for(let i = 0; i < urls.length; ++i) {
+        for (let i = 0; i < urls.length; ++i) {
             let page = urls[i];
             if (i < urls.length - 1) {
                 nextPrevChapters.add(util.normalizeUrlForCompare(urls[i + 1].sourceUrl));
-            };
+            }
             page.nextPrevChapters = nextPrevChapters;
             this.webPages.set(page.sourceUrl, page);
             nextPrevChapters = new Set();
@@ -53,7 +53,8 @@ class ParserState {
 
 class Parser {    
     constructor(imageCollector) {
-        this.minimumThrottle = null;
+        this.minimumThrottle = 500;
+        this.maxSimultanousFetchSize = 1;
         this.state = new ParserState();
         this.imageCollector = imageCollector || new ImageCollector();
         this.userPreferences = null;
@@ -72,6 +73,47 @@ class Parser {
     getPagesToFetch() {
         return this.state.webPages;
     }
+    
+    //Use this option if the parser isn't sending the correct HTTP header
+    isCustomError(response) {  // eslint-disable-line no-unused-vars
+        return false;
+    }
+
+    setCustomErrorResponse(url, wrapOptions, checkedresponse) {
+        //example
+        let ret = {};
+        ret.url = url;
+        ret.wrapOptions = wrapOptions;
+        ret.response = {};
+        //URL that's get opened on 'Open URL for Captcha' click
+        ret.response.url = checkedresponse.response.url;
+        ret.response.status = 403;
+        //How often should it be retried and with how much delay in between
+        ret.response.retryDelay = [80,40,20,10,5];
+        ret.errorMessage = "This is a custom error message that will be displayed should all retries fail";
+        //return empty to throw error
+        return {};
+    }
+
+    isNoContentToError403AndContentNull(response) {
+        if (this.userPreferences.noContentToError403.value) {
+            let content = this.findContent(response.responseXML);
+            return (content == null);
+        }
+        else {
+            return false;
+        }
+    }
+
+    setNoContentToError403Response(url, wrapOptions, checkedresponse) {
+        let ret = {};
+        ret.url = url;
+        ret.wrapOptions = wrapOptions;
+        ret.response = {};
+        ret.response.url = checkedresponse.response.url;
+        ret.response.status = 403;
+        return ret;
+    }
 
     onUserPreferencesUpdate(userPreferences) {
         this.userPreferences = userPreferences;
@@ -87,8 +129,11 @@ class Parser {
         let content = this.findContent(webPage.rawDom);
         this.customRawDomToContentStep(webPage, content);
         util.decodeCloudflareProtectedEmails(content);
-        this.removeNextAndPreviousChapterHyperlinks(webPage, content);
+        if (this.userPreferences.removeNextAndPreviousChapterHyperlinks.value) {
+            this.removeNextAndPreviousChapterHyperlinks(webPage, content);
+        }
         this.removeUnwantedElementsFromContentElement(content);
+        this.replaceWpBlockSpacersWithHR(content);
         this.addTitleToContent(webPage, content);
         util.fixBlockTagsNestedInInlineTags(content);
         this.imageCollector.replaceImageTags(content);
@@ -96,10 +141,12 @@ class Parser {
         util.makeHyperlinksRelative(webPage.rawDom.baseURI, content);
         util.setStyleToDefault(content);
         util.prepForConvertToXhtml(content);
+        util.removeEmptyAttributes(content);
+        util.removeSpansWithNoAttributes(content);
         util.removeEmptyDivElements(content);
         util.removeTrailingWhiteSpace(content);
         if (util.isElementWhiteSpace(content)) {
-            let errorMsg = chrome.i18n.getMessage("warningNoVisibleContent", [webPage.sourceUrl]);
+            let errorMsg = UIText.Warning.warningNoVisibleContent(webPage.sourceUrl);
             ErrorLog.showErrorMessage(errorMsg);
         }
         return content;
@@ -140,24 +187,38 @@ class Parser {
         return null;
     }
 
+    replaceWpBlockSpacersWithHR(content) {
+        [...content.querySelectorAll("div.wp-block-spacer")].forEach(
+            e => e.replaceWith(content.ownerDocument.createElement("hr"))
+        );
+    }
+
     removeUnwantedElementsFromContentElement(element) {
         util.removeScriptableElements(element);
         util.removeComments(element);
-        util.removeElements(element.querySelectorAll("noscript, input"));
+        util.removeElements(element.querySelectorAll("noscript, input, [aria-hidden=\"true\"]"));
         util.removeUnwantedWordpressElements(element);
         util.removeMicrosoftWordCrapElements(element);
         util.removeShareLinkElements(element);
         util.removeLeadingWhiteSpace(element);
-    };
+    }
 
     customRawDomToContentStep(chapter, content) { // eslint-disable-line no-unused-vars
         // override for any custom processing
     }
 
     populateUI(dom) {
+        let versionElement = document.getElementById("spanExtensionVersion");
+        versionElement.textContent = `WebToEpub v${util.extensionVersion()}`;
+
         CoverImageUI.showCoverImageUrlInput(true);
         let coverUrl = this.findCoverImageUrl(dom);
         CoverImageUI.setCoverImageUrl(coverUrl);
+        this.populateUIImpl();
+    }
+
+    populateUIImpl() {
+        // default implementation is do nothing more
     }
 
     /**
@@ -170,9 +231,9 @@ class Parser {
                 let cover = content.querySelector("img");
                 if (cover != null) {
                     return cover.src;
-                };
-            };
-        };
+                }
+            }
+        }
         return null;
     }
 
@@ -199,11 +260,9 @@ class Parser {
         return items;
     }
 
-    makePlacehoderEpubItem(webPage, epubItemIndex) {
+    makePlaceholderEpubItem(webPage, epubItemIndex) {
         let temp = Parser.makeEmptyDocForContent(webPage.sourceUrl);
-        temp.content.textContent = chrome.i18n.getMessage("chapterPlaceholderMessage", 
-            [webPage.sourceUrl, webPage.error]
-        );
+        temp.content.textContent = UIText.Default.chapterPlaceholderMessage(webPage.sourceUrl, webPage.error);
         util.convertPreTagToPTags(temp.dom, temp.content);
         return [new ChapterEpubItem(webPage, temp.content, epubItemIndex)];
     }
@@ -214,11 +273,11 @@ class Parser {
     static extractTitleDefault(dom) {
         let title = dom.querySelector("meta[property='og:title']");
         return (title === null) ? dom.title : title.getAttribute("content");
-    };
+    }
 
     extractTitleImpl(dom) {
         return Parser.extractTitleDefault(dom);
-    };
+    }
 
     extractTitle(dom) {
         let title = this.extractTitleImpl(dom);
@@ -229,7 +288,7 @@ class Parser {
             title = title.textContent;
         }
         return title.trim();
-    };
+    }
 
     /**
     * default implementation
@@ -246,12 +305,12 @@ class Parser {
         // try jetpack tag
         let locale = dom.querySelector("meta[property='og:locale']");
         if (locale !== null) {
-            return locale.getAttribute("content");
+            return locale.getAttribute("content").substring(0, 2);
         }
 
         // try <html>'s lang attribute
-        locale = dom.querySelector("html").getAttribute("lang");
-        return (locale === null) ? "en" : locale;
+        locale = dom.querySelector("html").getAttribute("lang") ?? "en";
+        return locale.split("-")[0];
     }
 
     /**
@@ -272,22 +331,84 @@ class Parser {
     }
 
     /**
+    * default implementation, 
+    * if not available, return ''
+    */
+    extractPublisher(dom) {
+        // try metadata extraction
+        let publisher = dom.querySelector("meta[property='og:site_name']");
+        return publisher?.content ?? "";
+    }
+
+    extractDatePublished(dom) {
+        let published = dom.querySelector(
+            "meta[property='article:published_time'], time[itemprop='datePublished']"
+        );
+        return published?.content ?? published?.dateTime ?? null;
+    }
+
+    /**
     * default implementation, Derived classes will override
     */
     extractSeriesInfo(dom, metaInfo) {  // eslint-disable-line no-unused-vars
     }
 
-    getEpubMetaInfo(dom, useFullTitle){
-        let that = this;
+    async loadEpubMetaInfo(dom) {  // eslint-disable-line no-unused-vars
+        return;
+    }
+
+    getEpubMetaInfo(dom, useFullTitle) {
         let metaInfo = new EpubMetaInfo();
         metaInfo.uuid = dom.baseURI;
-        metaInfo.title = that.extractTitle(dom);
-        metaInfo.author = that.extractAuthor(dom).trim();
-        metaInfo.language = that.extractLanguage(dom);
-        metaInfo.fileName = that.makeSaveAsFileNameWithoutExtension(metaInfo.title, useFullTitle);
-        metaInfo.subject = that.extractSubject(dom);
-        metaInfo.description = that.extractDescription(dom);
-        that.extractSeriesInfo(dom, metaInfo);
+        try {
+            metaInfo.title = this.extractTitle(dom);
+        }
+        catch (err) {
+            metaInfo.title = "";
+        }
+        try {
+            metaInfo.author = this.extractAuthor(dom).trim();
+        }
+        catch (err) {
+            metaInfo.author = "";
+        }
+        try {
+            metaInfo.language = this.extractLanguage(dom);
+        }
+        catch (err) {
+            metaInfo.language = "";
+        }
+        try {
+            metaInfo.fileName = this.makeSaveAsFileNameWithoutExtension(metaInfo.title, useFullTitle);
+        }
+        catch (err) {
+            metaInfo.fileName = "web.epub";
+        }
+        try {
+            metaInfo.subject = this.extractSubject(dom);
+        }
+        catch (err) {
+            metaInfo.subject = "";
+        }
+        try {
+            metaInfo.description = this.extractDescription(dom);
+        }
+        catch (err) {
+            metaInfo.description = "";
+        }
+        try {
+            metaInfo.publisher = this.extractPublisher(dom);
+        }
+        catch (err) {
+            metaInfo.publisher = "";
+        }
+        try {
+            metaInfo.datePublished = this.extractDatePublished(dom);
+        }
+        catch (err) {
+            metaInfo.datePublished = null;
+        }
+        this.extractSeriesInfo(dom, metaInfo);
         return metaInfo;
     }
 
@@ -303,8 +424,8 @@ class Parser {
     }
 
     makeSaveAsFileNameWithoutExtension(title, useFullTitle) {
-        let maxFiileNameLength = useFullTitle ? 512 : 20;
-        let fileName = (title == null)  ? "web" : util.safeForFileName(title, maxFiileNameLength);
+        let maxFileNameLength = useFullTitle ? 512 : 20;
+        let fileName = (title == null)  ? "web" : util.safeForFileName(title, maxFileNameLength);
         if (util.isStringWhiteSpace(fileName)) {
             // title is probably not English, so just use it as is
             fileName = title;
@@ -315,8 +436,7 @@ class Parser {
     epubItemSupplier() {
         let epubItems = this.webPagesToEpubItems([...this.state.webPages.values()]);
         this.fixupHyperlinksInEpubItems(epubItems);
-        let supplier = new EpubItemSupplier(this, epubItems, this.imageCollector);
-        return supplier;
+        return new EpubItemSupplier(this, epubItems, this.imageCollector);
     }
 
     webPagesToEpubItems(webPages) {
@@ -329,10 +449,10 @@ class Parser {
             ++index;
         }
 
-        for(let webPage of webPages.filter(c => this.isWebPagePackable(c))) {
+        for (let webPage of webPages.filter(c => this.isWebPagePackable(c))) {
             let newItems = (webPage.error == null)
                 ? webPage.parser.webPageToEpubItems(webPage, index)
-                : this.makePlacehoderEpubItem(webPage, index);
+                : this.makePlaceholderEpubItem(webPage, index);
             epubItems = epubItems.concat(newItems);
             index += newItems.length;
             delete(webPage.rawDom);
@@ -341,20 +461,19 @@ class Parser {
     }
 
     makeInformationEpubItem(dom) {
-        let titleText = chrome.i18n.getMessage("informationPageTitle");
-        let div = document.createElement("div");
+        let titleText = UIText.Default.informationPageTitle;
         let title = document.createElement("h1");
         title.appendChild(document.createTextNode(titleText));
-        div.appendChild(title);
+        let div = document.createElement("div");
         let urlElement = document.createElement("p");
         let bold = document.createElement("b");
-        bold.textContent = chrome.i18n.getMessage("tableOfContentsUrl");
+        bold.textContent = UIText.Default.tableOfContentsUrl;
         urlElement.appendChild(bold);
         urlElement.appendChild(document.createTextNode(this.state.chapterListUrl));
         div.appendChild(urlElement);
         let infoDiv = document.createElement("div");
         this.populateInfoDiv(infoDiv, dom);    
-        let childNodes = [div, infoDiv];
+        let childNodes = [title, div, infoDiv];
         let chapter = {
             sourceUrl: this.state.chapterListUrl,
             title: titleText,
@@ -364,16 +483,17 @@ class Parser {
     }
 
     populateInfoDiv(infoDiv, dom) {
-        let sanitize = new Sanitize();
-        for(let n of this.getInformationEpubItemChildNodes(dom).filter(n => n != null)) {
-            let clone = n.cloneNode(true);
-            this.cleanInformationNode(clone);
+        for (let n of this.getInformationEpubItemChildNodes(dom).filter(n => n != null)) {
+            let clone = util.sanitizeNode(n);
+            if (clone) {
+                this.cleanInformationNode(clone);
+            }
             if (clone != null) {
-                infoDiv.appendChild(sanitize.clean(clone));
+                infoDiv.appendChild(clone);
             }
         }
         // this "page" doesn't go through image collector, so strip images
-        util.removeChildElementsMatchingCss(infoDiv, "img");
+        util.removeChildElementsMatchingSelector(infoDiv, "img");
     }
 
     cleanInformationNode(node) {     // eslint-disable-line no-unused-vars
@@ -381,33 +501,33 @@ class Parser {
     }
 
     // called when plugin has obtained the first web page
-    onLoadFirstPage(url, firstPageDom) {
-        let that = this;
+    async onLoadFirstPage(url, firstPageDom) {
         this.state.firstPageDom = firstPageDom;
         this.state.chapterListUrl = url;
         let chapterUrlsUI = new ChapterUrlsUI(this);
         this.userPreferences.setReadingListCheckbox(url);
 
-        // returns promise, because may need to fetch additional pages to find list of chapters
-        that.getChapterUrls(firstPageDom, chapterUrlsUI).then(function(chapters) {
-            if (that.userPreferences.chaptersPageInChapterList.value) {
-                chapters = that.addFirstPageUrlToWebPages(url, firstPageDom, chapters);
+        try {
+            let chapters = await this.getChapterUrls(firstPageDom, chapterUrlsUI);
+            if (this.userPreferences.chaptersPageInChapterList.value) {
+                chapters = this.addFirstPageUrlToWebPages(url, firstPageDom, chapters);
             }
-            chapters = that.cleanWebPageUrls(chapters);
-            that.userPreferences.readingList.deselectOldChapters(url, chapters);
+            chapters = this.cleanWebPageUrls(chapters);
+            chapters?.forEach(chapter => chapter.title = chapter.title?.trim());
+            await this.userPreferences.readingList.deselectOldChapters(url, chapters);
             chapterUrlsUI.populateChapterUrlsTable(chapters);
             if (0 < chapters.length) {
                 if (chapters[0].sourceUrl === url) {
                     chapters[0].rawDom = firstPageDom;
-                    that.updateLoadState(chapters[0]);
+                    this.updateLoadState(chapters[0]);
                 }
                 ProgressBar.setValue(0);
             }
-            that.state.setPagesToFetch(chapters);
+            this.state.setPagesToFetch(chapters);
             chapterUrlsUI.connectButtonHandlers();
-        }).catch(function (err) {
+        } catch (err) {
             ErrorLog.showErrorMessage(err);
-        });
+        }
     }
 
     cleanWebPageUrls(webPages) {
@@ -418,7 +538,7 @@ class Parser {
                 foundUrls.add(webPage.sourceUrl);
             }
             return unique;
-        }
+        };
 
         return webPages
             .map(this.fixupImgurGalleryUrl)
@@ -446,7 +566,7 @@ class Parser {
 
     onFetchChaptersClicked() {
         if (0 == this.state.webPages.size) {
-            ErrorLog.showErrorMessage(chrome.i18n.getMessage("noChaptersFoundAndFetchClicked"));
+            ErrorLog.showErrorMessage(UIText.Error.noChaptersFoundAndFetchClicked);
         } else {
             this.fetchWebPages();
         }
@@ -463,8 +583,6 @@ class Parser {
     }
 
     async fetchWebPages() {
-        let that = this;
-
         let pagesToFetch = [...this.state.webPages.values()].filter(c => c.isIncludeable);
         if (pagesToFetch.length === 0) {
             return Promise.reject(new Error("No chapters found."));
@@ -472,8 +590,8 @@ class Parser {
 
         this.setUiToShowLoadingProgress(pagesToFetch.length);
 
-        that.imageCollector.reset();
-        that.imageCollector.setCoverImageUrl(CoverImageUI.getCoverImageUrl());
+        this.imageCollector.reset();
+        this.imageCollector.setCoverImageUrl(CoverImageUI.getCoverImageUrl());
 
         await this.addParsersToPages(pagesToFetch);
         let index = 0;
@@ -484,6 +602,9 @@ class Parser {
                 await Promise.all(group.map(async (webPage) => this.fetchWebPageContent(webPage)));
                 index += group.length;
                 group = this.groupPagesToFetch(pagesToFetch, index);
+                if (util.getSleepController().signal.aborted) {
+                    break;
+                }
             }
         }
         catch (err)
@@ -497,53 +618,53 @@ class Parser {
     }
 
     groupPagesToFetch(webPages, index) {
-        let blockSize = parseInt(this.userPreferences.maxPagesToFetchSimultaneously.value);
-        blockSize = this.clampSimultanousFetchSize(blockSize);
-        return webPages.slice(index, index + blockSize);
+        return webPages.slice(index, index + this.maxSimultanousFetchSize);
     }
 
     async fetchWebPageContent(webPage) {
-        let that = this;
         ChapterUrlsUI.showDownloadState(webPage.row, ChapterUrlsUI.DOWNLOAD_STATE_SLEEPING);
         await this.rateLimitDelay();
         ChapterUrlsUI.showDownloadState(webPage.row, ChapterUrlsUI.DOWNLOAD_STATE_DOWNLOADING);
         let pageParser = webPage.parser;
-        return pageParser.fetchChapter(webPage.sourceUrl).then(function (webPageDom) {
+        try {
+            let webPageDom = await pageParser.fetchChapter(webPage.sourceUrl);
             delete webPage.error;
             webPage.rawDom = webPageDom;
             pageParser.preprocessRawDom(webPageDom);
             pageParser.removeUnusedElementsToReduceMemoryConsumption(webPageDom);
             let content = pageParser.findContent(webPage.rawDom);
             if (content == null) {
-                let errorMsg = chrome.i18n.getMessage("errorContentNotFound", [webPage.sourceUrl]);
-                throw new Error(errorMsg);
+                if (this.userPreferences.noContentToError403.value) {
+                    let errorMsg = UIText.Warning.warning403ErrorResponse(new URL(webPage.sourceUrl).hostname);
+                    throw new Error(errorMsg);
+                }
+                else {
+                    let errorMsg = UIText.Error.errorContentNotFound(webPage.sourceUrl);
+                    throw new Error(errorMsg);
+                }
             }
             return pageParser.fetchImagesUsedInDocument(content, webPage);
-        }).catch(function (error) {
-            if (that.userPreferences.skipChaptersThatFailFetch.value) {
+        } catch (error) {
+            if (this.userPreferences.skipChaptersThatFailFetch.value) {
                 ErrorLog.log(error);
                 webPage.error = error;
             } else {
                 webPage.isIncludeable = false;
                 throw error;
             }
-        }); 
+        }
     }
 
-    fetchImagesUsedInDocument(content, webPage) {
-        let that = this;
-        return this.imageCollector.preprocessImageTags(content, webPage.sourceUrl)
-            .then(function (revisedContent) {
-                that.imageCollector.findImagesUsedInDocument(revisedContent);
-                return that.imageCollector.fetchImages(() => { }, webPage.sourceUrl);
-            }).then(function () {
-                that.updateLoadState(webPage);
-            });
+    async fetchImagesUsedInDocument(content, webPage) {
+        let revisedContent = await this.imageCollector.preprocessImageTags(content, webPage.sourceUrl);
+        this.imageCollector.findImagesUsedInDocument(revisedContent);
+        await this.imageCollector.fetchImages(() => { }, webPage.sourceUrl);
+        this.updateLoadState(webPage);
     }
 
     /**
     * default implementation
-    * derivied classes override if need to do something to fetched DOM before
+    * derived classes override if need to do something to fetched DOM before
     * normal processing steps
     */
     preprocessRawDom(webPageDom) { // eslint-disable-line no-unused-vars
@@ -555,7 +676,13 @@ class Parser {
 
     // Hook if need to chase hyperlinks in page to get all chapter content
     async fetchChapter(url) {
-        return (await HttpClient.wrapFetch(url)).responseXML;
+        if (this.userPreferences.noContentToError403.value) {
+            let options = { parser: this };
+            return (await HttpClient.wrapFetch(url, options)).responseXML;
+        }
+        else {
+            return (await HttpClient.wrapFetch(url)).responseXML;
+        }
     }
 
     updateReadingList() {
@@ -576,8 +703,8 @@ class Parser {
 
     fixupHyperlinksInEpubItems(epubItems) {
         let targets = this.sourceUrlToEpubItemUrl(epubItems);
-        for(let item of epubItems) {
-            for(let link of item.getHyperlinks().filter(this.isUnresolvedHyperlink)) {
+        for (let item of epubItems) {
+            for (let link of item.getHyperlinks().filter(this.isUnresolvedHyperlink)) {
                 if (!this.hyperlinkToEpubItemUrl(link, targets)) {
                     this.makeHyperlinkAbsolute(link);
                 }
@@ -587,7 +714,7 @@ class Parser {
 
     sourceUrlToEpubItemUrl(epubItems) {
         let targets = new Map();
-        for(let item of epubItems) {
+        for (let item of epubItems) {
             let key = util.normalizeUrlForCompare(item.sourceUrl);
             
             // Some source URLs may generate multiple epub items.
@@ -627,18 +754,8 @@ class Parser {
         return null;
     }
 
-    /**
-     * limit number of pages to fetch at once 
-     * ignoing user preference.
-     * Some sites can't handle high load.  e.g. Comrademao
-     * @param {any} fetchSize
-     */
-    clampSimultanousFetchSize(fetchSize) {
-        return fetchSize;
-    }
-
     tagAuthorNotes(elements) {
-        for(let e of elements) {
+        for (let e of elements) {
             e.classList.add("webToEpub-author-note");
         }
     }
@@ -666,8 +783,21 @@ class Parser {
         };
     }
 
-    static findConstrutedContent(dom) {
+    static findConstructedContent(dom) {
         return dom.querySelector("div." + Parser.WEB_TO_EPUB_CLASS_NAME);
+    }
+
+    static addTextToChapterContent(newDoc, contentText) {
+        let lines = contentText
+            .replace(/\r/g, "\n")
+            .replace(/\n\n/g, "\n")
+            .split("\n")
+            .filter(s => !util.isNullOrEmpty(s));
+        for (let line of lines) {
+            let pnode = newDoc.dom.createElement("p");
+            pnode.textContent = line;
+            newDoc.content.appendChild(pnode);
+        }
     }
 
     async getChapterUrlsFromMultipleTocPages(dom, extractPartialChapterList, getUrlsOfTocPages, chapterUrlsUI)  {
@@ -678,12 +808,7 @@ class Parser {
 
     getRateLimit()
     {
-        if (this.userPreferences.manualDelayPerChapter.value == "simulate_reading")
-        {
-            return this.userPreferences.manualDelayPerChapter.value;
-        }
-        let manualDelayPerChapterValue = parseInt(this.userPreferences.manualDelayPerChapter.value);
-
+        let manualDelayPerChapterValue = (!isNaN(parseInt(this.userPreferences.manualDelayPerChapter.value)))?parseInt(this.userPreferences.manualDelayPerChapter.value):this.minimumThrottle;
         if (!this.userPreferences.overrideMinimumDelay.value)
         {
             return Math.max(this.minimumThrottle, manualDelayPerChapterValue);
@@ -693,17 +818,16 @@ class Parser {
 
     async rateLimitDelay() {
         let manualDelayPerChapterValue = this.getRateLimit();
-        manualDelayPerChapterValue = (manualDelayPerChapterValue == "simulate_reading" )? util.randomInteger(420000,900000): manualDelayPerChapterValue;
         await util.sleep(manualDelayPerChapterValue);
     }
 
-    async getChaptersFromAllTocPages(chapters, extractPartialChapterList, urlsOfTocPages, chapterUrlsUI)  {
+    async getChaptersFromAllTocPages(chapters, extractPartialChapterList, urlsOfTocPages, chapterUrlsUI, wrapOptions)  {
         if (0 < chapters.length) {
             chapterUrlsUI.showTocProgress(chapters);
         }
-        for(let url of urlsOfTocPages) {
+        for (let url of urlsOfTocPages) {
             await this.rateLimitDelay();
-            let newDom = (await HttpClient.wrapFetch(url)).responseXML;
+            let newDom = (await HttpClient.wrapFetch(url, wrapOptions)).responseXML;
             let partialList = extractPartialChapterList(newDom);
             chapterUrlsUI.showTocProgress(partialList);
             chapters = chapters.concat(partialList);
@@ -729,7 +853,7 @@ class Parser {
     moveFootnotes(dom, content, footnotes) {
         if (0 < footnotes.length) {
             let list = dom.createElement("ol");
-            for(let f of footnotes) {
+            for (let f of footnotes) {
                 let item = dom.createElement("li");
                 f.removeAttribute("style");
                 item.appendChild(f);
@@ -747,7 +871,8 @@ class Parser {
         let count = 2;
         let nextUrl = moreChapterTextUrl(dom, url, count);
         let oldContent = this.findContent(dom);
-        while(nextUrl != null) {
+        while (nextUrl != null) {
+            await this.rateLimitDelay();
             let nextDom = (await HttpClient.wrapFetch(nextUrl)).responseXML;
             let newContent = this.findContent(nextDom);
             nextUrl = moreChapterTextUrl(nextDom, url, ++count);

@@ -5,7 +5,7 @@ parserFactory.registerUrlRule(
     () => new Booktoki152Parser()
 );
 
-class Booktoki152Parser extends Parser{
+class Booktoki152Parser extends Parser {
     constructor() {
         super();
         this.minimumThrottle = 1500;
@@ -18,7 +18,7 @@ class Booktoki152Parser extends Parser{
     }
 
     linkToChapter(link) {
-        util.removeChildElementsMatchingCss(link, "span");
+        util.removeChildElementsMatchingSelector(link, "span");
         return ({
             sourceUrl:  link.href,
             title: link.textContent.trim()

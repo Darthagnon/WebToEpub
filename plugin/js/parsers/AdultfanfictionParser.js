@@ -5,13 +5,13 @@ parserFactory.registerRule(
     () => new AdultfanfictionParser()
 );
 
-class AdultfanfictionParser extends Parser{
+class AdultfanfictionParser extends Parser {
     constructor() {
         super();
     }
 
     static isAdultFanFiction(url) {
-        return (util.extractHostName(url).indexOf(".adult-fanfiction.org") != -1)
+        return (util.extractHostName(url).indexOf(".adult-fanfiction.org") != -1);
     }
 
     async getChapterUrls(dom) {
@@ -28,7 +28,7 @@ class AdultfanfictionParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "ul#dropdown1, a.dropdown-trigger, ul.pagination");
+        util.removeChildElementsMatchingSelector(element, "ul#dropdown1, a.dropdown-trigger, ul.pagination");
         super.removeUnwantedElementsFromContentElement(element);
     }
 }

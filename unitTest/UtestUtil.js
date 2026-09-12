@@ -516,28 +516,28 @@ test("safeForFileName", function (assert) {
     assert.equal(actual, "0123456789A0123456789");
 });
 
-test("extactSubstring", function (assert) {
+test("extractSubstring", function (assert) {
     let sample1 = "; var comicid = 20409;        var chapterid =349317;        var imagepage=1;        var imagecount=8;        ";
     let sample2 = "var comicid = 28771; var chapterid = 549660; var userid = 0; var imagepage = 4; var imagecount = 5;";
 
     let regex = /var\s*chapterid\s*=\s*/;
-    let actual = util.extactSubstring(sample1, regex, ';')
+    let actual = util.extractSubstring(sample1, regex, ';')
     assert.equal(actual, "349317");
-    actual = util.extactSubstring(sample2, regex, ';')
+    actual = util.extractSubstring(sample2, regex, ';')
     assert.equal(actual, "549660");
 
     let prefix = "var chapterid = ";
-    actual = util.extactSubstring(sample2, prefix, ';')
+    actual = util.extractSubstring(sample2, prefix, ';')
     assert.equal(actual, "549660");
 });
 
-QUnit.test("removeChildElementsMatchingCss", function (assert) {
+QUnit.test("removeChildElementsMatchingSelector", function (assert) {
     let dom = TestUtils.makeDomWithBody(
         "<h1><a>Title</a></h1>" +
         "<div><p><span></span></p></div>" +
         "<img></img>"
     );
-    util.removeChildElementsMatchingCss(dom.body, "span, img");
+    util.removeChildElementsMatchingSelector(dom.body, "span, img");
     let actual = dom.body.innerHTML;
     assert.equal(actual, "<h1><a>Title</a></h1><div><p></p></div>");
 });
@@ -591,4 +591,38 @@ QUnit.test("getParamFromUrl", function (assert) {
     assert.equal(actual, "File:HSDxD_v01_cover.jpg");
     actual = util.getParamFromUrl("https://www.baka-tsuki.org/project/index.php?title=File:HSDxD_v01_cover.jpg", "nonesuch");
     assert.equal(actual, null);
+});
+
+QUnit.test("getFirstImgSrc", function (assert) {
+    let dom = TestUtils.makeDomWithBody(
+        "<p id='cover'><img src='https://example.com/first.png'/></p>\r" +
+        "<img id='cover_img' src='https://example.com/second.png'/>\r"
+    );
+    let actual = util.getFirstImgSrc(dom.body, "#cover");
+    assert.equal(actual, "https://example.com/first.png");
+    actual = util.getFirstImgSrc(dom.body, "#cover_img");
+    assert.equal(actual, "https://example.com/second.png");
+});
+
+QUnit.test("sleepController resets properly and is not stale", function (assert) {
+    let controller1 = util.getSleepController();
+    assert.ok(controller1 instanceof AbortController, "sleepController is an AbortController");
+    assert.notOk(controller1.signal.aborted, "initially not aborted");
+
+    util.getSleepController().abort();
+    assert.ok(util.getSleepController().signal.aborted, "controller aborted");
+    assert.equal(util.getSleepController(), controller1, "still referencing same controller before reset");
+
+    util.resetSleepController();
+    let controller2 = util.getSleepController();
+    assert.notEqual(controller1, controller2, "new controller instance after reset");
+    assert.notOk(util.getSleepController().signal.aborted, "new controller is not aborted");
+});
+
+QUnit.test("sleep resolves when sleepController is aborted", async function (assert) {
+    let sleepPromise = util.sleep(5000);
+    util.getSleepController().abort();
+    await sleepPromise;
+    assert.ok(true, "sleep resolved promptly upon abort");
+    util.resetSleepController();
 });

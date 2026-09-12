@@ -3,6 +3,7 @@
 class ErrorLog {
     constructor() {
     }
+    static SuppressErrorLog =  false;
 
     static log(error) {
         ErrorLog.history.push(ErrorLog.getMsgText(error));
@@ -10,11 +11,14 @@ class ErrorLog {
 
     static showErrorMessage(msg) {
         // if already showing an error message, queue the new one to display
-        // when currently showing is closed.
+        // when currently showing is closed. 
+        if (this.SuppressErrorLog && msg.retryAction == null) {
+            return;
+        }
         ErrorLog.queue.push(msg);
         if (1 < ErrorLog.queue.length) {
             return;
-        };
+        }
 
         let sections = ErrorLog.hideAllSectionsSavingVisibility();
         ErrorLog.getErrorSection().hidden = false;
@@ -30,7 +34,7 @@ class ErrorLog {
         } else {
             ErrorLog.setErrorMessageText(ErrorLog.queue[0]);
             ErrorLog.setErrorMessageButtons(ErrorLog.queue[0], sections);
-        };
+        }
     }
 
     static showLogToUser() {
@@ -57,10 +61,10 @@ class ErrorLog {
     /** private */
     static hideAllSectionsSavingVisibility() {
         let sections = new Map();
-        for(let section of document.querySelectorAll("section")) {
+        for (let section of document.querySelectorAll("section")) {
             sections.set(section, section.hidden);
             section.hidden = true;
-        };
+        }
         return sections;
     }
 
@@ -90,6 +94,7 @@ class ErrorLog {
         let retryButton = document.getElementById("errorButtonRetry");
         let cancelButton = document.getElementById("errorButtonCancel");
         let OpenURLButton = document.getElementById("errorButtonOpenURL");
+        let CopyURLButton = document.getElementById("errorButtonCopyURL");
         let BlockURLButton = document.getElementById("errorButtonBlockURL");
         if (msg.retryAction !== undefined) {
             okButton.hidden = true;
@@ -103,16 +108,21 @@ class ErrorLog {
                 close();
                 msg.cancelAction();
             };
-            cancelButton.textContent = chrome.i18n.getMessage("__MSG_button_error_Cancel__");
+            cancelButton.textContent = UIText.Common.cancel;
             if (msg.cancelLabel !== undefined) {
                 cancelButton.textContent =  msg.cancelLabel;
-            };
+            }
             if (msg.openurl !== undefined) {
                 OpenURLButton.hidden = false;
+                CopyURLButton.hidden = false;
                 OpenURLButton.onclick = function() {
                     //window.open(new URL(msg.openurl), "_blank").focus();
                     //use chrome.tabs.create to prevent auto popup block from browser
                     chrome.tabs.create({ url: msg.openurl});
+                };
+                CopyURLButton.onclick = function() {
+                    //copy to clipboard
+                    navigator.clipboard.writeText(msg.openurl);
                 };
                 BlockURLButton.hidden = false;
                 BlockURLButton.onclick = function() {
@@ -122,6 +132,7 @@ class ErrorLog {
                 };
             } else {
                 OpenURLButton.hidden = true;
+                CopyURLButton.hidden = true;
                 BlockURLButton.hidden = true;
             }
         } else {
@@ -130,15 +141,16 @@ class ErrorLog {
             retryButton.hidden = true;
             cancelButton.hidden = true;
             OpenURLButton.hidden = true;
+            CopyURLButton.hidden = true;
             BlockURLButton.hidden = true;
         }
     }
 
     /** private */
     static restoreSectionVisibility(sections) {
-        for(let [key,value] of sections) {
+        for (let [key,value] of sections) {
             key.hidden = value;
-        };
+        }
     }
 }
 

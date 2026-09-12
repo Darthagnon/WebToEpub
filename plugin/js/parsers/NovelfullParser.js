@@ -5,52 +5,55 @@ parserFactory.register("allnovelbin.net", () => new NovelfullParser());
 parserFactory.register("allnovelfull.app", () => new NovelfullParser());
 parserFactory.register("allnovelfull.com", () => new NovelfullParser());
 //dead url
-parserFactory.register("allnovelfull.org", () => new NovelfullParser());
+parserFactory.registerDeadSite("allnovelfull.org", () => new NovelfullParser());
 parserFactory.register("allnovelfull.net", () => new NovelfullParser());
 parserFactory.register("allnovelnext.com", () => new NovelfullParser());
 parserFactory.register("all-novelfull.net", () => new NovelfullParser());
 parserFactory.register("boxnovelfull.com", () => new NovelfullParser());
 //dead url
-parserFactory.register("freenovelsread.com", () => new NovelfullParser());
+parserFactory.registerDeadSite("freenovelsread.com", () => new NovelfullParser());
 parserFactory.register("freewn.com", () => new NovelfullParser());
 parserFactory.register("novel-bin.com", () => new NovelHyphenBinParser());
 parserFactory.register("novel-bin.net", () => new NovelHyphenBinParser());
 parserFactory.register("novel-bin.org", () => new NovelHyphenBinParser());
 parserFactory.register("novel-next.com", () => new NovelfullParser());
-parserFactory.register("novel35.com", () => new Novel35Parser());
+//dead url
+parserFactory.registerDeadSite("novel35.com", () => new Novel35Parser());
 parserFactory.register("novelactive.org", () => new NovelfullParser());
-parserFactory.register("novelbin.com", () => new NovelfullParser());
+parserFactory.register("novelbin.com", () => new NovelbinParser());
 parserFactory.register("novelbin.me", () => new NovelfullParser());
 parserFactory.register("novelbin.net", () => new NovelfullParser());
 parserFactory.register("novelbin.org", () => new NovelfullParser());
+parserFactory.register("noveldrama.org", () => new NovelfullParser());
 //dead url
-parserFactory.register("novelebook.net", () => new NovelfullParser());
+parserFactory.registerDeadSite("novelebook.net", () => new NovelfullParser());
 parserFactory.register("novelfull.com", () => new NovelfullParser());
 parserFactory.register("novelfull.net", () => new NovelfullParser());
 parserFactory.register("novelfullbook.com", () => new NovelfullParser());
 parserFactory.register("novelfulll.com", () => new NovelfullParser());
 //dead url
-parserFactory.register("novelhulk.net", () => new NovelfullParser());
+parserFactory.registerDeadSite("novelhulk.net", () => new NovelfullParser());
 parserFactory.register("novelmax.net", () => new NovelfullParser());
 parserFactory.register("novelnext.com", () => new NovelfullParser());
 parserFactory.register("novelnext.dramanovels.io", () => new NovelfullParser());
 parserFactory.register("novelnext.net", () => new NovelfullParser());
 parserFactory.register("novelnextz.com", () => new NovelfullParser());
 //dead url
-parserFactory.register("noveltop1.org", () => new NovelfullParser());
+parserFactory.registerDeadSite("noveltop1.org", () => new NovelfullParser());
 parserFactory.register("noveltrust.net", () => new NovelfullParser());
 parserFactory.register("novelusb.com", () => new NovelfullParser());
 parserFactory.register("novelusb.net", () => new NovelfullParser());
 parserFactory.register("novelxo.net", () => new NovelfullParser());
+parserFactory.register("novlove.com", () => new NovelfullParser());
 parserFactory.register("readnovelfull.me", () => new NovelfullParser());
 //dead url
-parserFactory.register("thenovelbin.org", () => new NovelfullParser());
+parserFactory.registerDeadSite("thenovelbin.org", () => new NovelfullParser());
 parserFactory.register("topnovelfull.com", () => new NovelfullParser());
 parserFactory.register("zinnovel.net", () => new NovelfullParser());
 
 parserFactory.registerManualSelect("NovelNext", () => new NovelfullParser());
 
-class NovelfullParser extends Parser{
+class NovelfullParser extends Parser {
     constructor() {
         super();
         this.minimumThrottle = 1000;
@@ -61,7 +64,7 @@ class NovelfullParser extends Parser{
     // correct parser for the chapters
     // See: https://github.com/dteviot/WebToEpub/issues/1345
     async addParsersToPages(pagesToFetch) {
-        for(let page of pagesToFetch) {
+        for (let page of pagesToFetch) {
             page.parser = this;
         }
     }
@@ -72,20 +75,29 @@ class NovelfullParser extends Parser{
             this.getUrlsOfTocPages,
             chapterUrlsUI
         );
-    };
+    }
 
     getUrlsOfTocPages(dom) {
         let link = dom.querySelector("li.last a");
         let urls = [];
         if (link != null) {
             let limit = link.getAttribute("data-page");
-            if (limit == null)
-            {
+            // data-page / page_num are 0-indexed; page is 1-indexed (novelfull.com)
+            let pageIsOneIndexed = false;
+            if (limit == null) {
                 let url = new URL(link.href);
-                limit = url.searchParams.get("page_num") || null;
+                if (url.searchParams.has("page")) {
+                    limit = url.searchParams.get("page");
+                    pageIsOneIndexed = true;
+                } else {
+                    limit = url.searchParams.get("page_num") || null;
+                }
             }
-            limit = parseInt(limit || "-1") + 1;
-            for (let i = 1; i <= limit; ++i) {
+            limit = pageIsOneIndexed
+                ? parseInt(limit || "0")
+                : parseInt(limit || "-1") + 1;
+            // page 1 is already extracted from the initial TOC dom
+            for (let i = 2; i <= limit; ++i) {
                 urls.push(NovelfullParser.buildUrlForTocPage(link, i));
             }
         }
@@ -106,6 +118,11 @@ class NovelfullParser extends Parser{
     }
 
     extractPartialChapterList(dom) {
+        if (!dom.querySelector("ul")) {
+            let templateElement = dom.querySelector("template");
+            return [...templateElement.content.querySelectorAll("li a")]
+                .map(link => util.hyperLinkToChapter(link));
+        }
         return [...dom.querySelectorAll("ul.list-chapter a")]
             .map(link => util.hyperLinkToChapter(link));
     }
@@ -114,17 +131,17 @@ class NovelfullParser extends Parser{
     findContent(dom) {
         return dom.querySelector("#chr-content")
             || dom.querySelector("#chapter-content");
-    };
+    }
 
     // title of the story  (not to be confused with title of each chapter)
     extractTitleImpl(dom) {
         return dom.querySelector("h3.title");
-    };
+    }
 
     extractAuthor(dom) {
         let items = [...dom.querySelectorAll("ul.info-meta li")]
             .filter(u => u.querySelector("h3")?.textContent === "Author:")
-            .map(u => u.querySelector("a")?.textContent)
+            .map(u => u.querySelector("a")?.textContent);
         return 0 < items.length 
             ? items[0]
             : super.extractAuthor(dom);
@@ -151,7 +168,7 @@ class NovelfullParser extends Parser{
         if (watermark) {
             let paragraphs = [...dom.querySelectorAll("p")]
                 .filter(p => p.textContent.includes(watermark));
-            for(let p of paragraphs) {
+            for (let p of paragraphs) {
                 p.textContent = p.textContent.replace(watermark, "");
                 p.appendChild(this.makeSpanWithWatermark(dom, watermark));
             }
@@ -179,18 +196,18 @@ class NovelfullParser extends Parser{
     }
 }
 
-class Novel35Parser extends NovelfullParser{
+class Novel35Parser extends NovelfullParser {
     constructor() {
         super();
     }
 
     getUrlsOfTocPages(dom) {
-        let urls = []
+        let urls = [];
         let paginateUrls = [...dom.querySelectorAll("ul.pagination li a:not([rel])")];
         if (0 < paginateUrls.length) {
             let url = new URL(paginateUrls.pop().href);
             let maxPage = url.searchParams.get("page");
-            for(let i = 2; i <= maxPage; ++i) {
+            for (let i = 2; i <= maxPage; ++i) {
                 url.searchParams.set("page", i);
                 urls.push(url.href);
             }
@@ -200,24 +217,66 @@ class Novel35Parser extends NovelfullParser{
 
     findContent(dom) {
         return dom.querySelector("div.chapter-content");
-    };
+    }
 
     findChapterTitle(dom) {
         return dom.querySelector("div.chapter-title").textContent;
     }    
 }
 
-class NovelHyphenBinParser extends NovelfullParser{
+class NovelHyphenBinParser extends NovelfullParser {
     constructor() {
         super();
     }
 
+    extractSubject(dom) {
+        let genres = [...dom.querySelectorAll(".info > li:nth-child(2) a")];
+
+        let tagHeader = dom.querySelector(".info > li:nth-child(3) h3");
+        if (tagHeader.textContent == "Tag:") { 
+            let tags = [...dom.querySelectorAll(".info > li:nth-child(3) a")];
+            return [...genres, ...tags].map(e => e.textContent).join(", ");
+        }
+
+        return genres.map(e => e.textContent).join(", ");
+    }
+
     removeUnwantedElementsFromContentElement(element) {
-        let marks = [...element.querySelectorAll(".novel_online")];
-        for(let mark of marks) {
+        let marks = [...element.querySelectorAll(".novel_online, .unlock-buttons")];
+        for (let mark of marks) {
             mark.nextSibling.nextSibling.remove();
             mark.remove();
         }
+        super.removeUnwantedElementsFromContentElement(element);
+    }
+}
+
+class NovelbinParser extends NovelfullParser {
+    constructor() {
+        super();
+    }
+
+    async getChapterUrls(dom) {
+        let url = new URL(dom.baseURI);
+        let slug = url.pathname.split("/").filter(a => a != "");
+        slug = slug[slug.length-1];
+        let tocHtml = (await HttpClient.wrapFetch("https://novelbin.com/ajax/chapter-archive?novelId="+slug)).responseXML;
+        let chapters = this.extractPartialChapterList(tocHtml);
+        return chapters;
+    }
+
+    extractSubject(dom) {
+        let genres = [...dom.querySelectorAll(".info > li:nth-child(2) a")];
+        let tags = [...dom.querySelectorAll(".tag-container a")];
+        return [...genres, ...tags].map(e => e.textContent).join(", ");
+    }
+
+    extractPublisher() {
+        return "NovelBin";
+    }
+
+    removeUnwantedElementsFromContentElement(element) {
+        util.removeChildElementsMatchingSelector(element, ".unlock-buttons");
         super.removeUnwantedElementsFromContentElement(element);
     }
 }

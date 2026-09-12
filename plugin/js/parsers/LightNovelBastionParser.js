@@ -1,6 +1,6 @@
 "use strict";
 
-parserFactory.register("lightnovelbastion.com", function() { return new LightNovelBastionParser() });
+parserFactory.register("lightnovelbastion.com", () => new LightNovelBastionParser());
 
 class LightNovelBastionParser extends Parser {
     constructor() {
@@ -23,11 +23,11 @@ class LightNovelBastionParser extends Parser {
     extractTitleImpl(dom) {
         let element = dom.querySelector("div.post-title");
         if (element !== null) {
-            util.removeChildElementsMatchingCss(element, "span");
+            util.removeChildElementsMatchingSelector(element, "span");
             return element.textContent;
         }
         return null;
-    };
+    }
 
     extractAuthor(dom) {
         let authorLabel = dom.querySelector("div.author-content");
@@ -35,12 +35,8 @@ class LightNovelBastionParser extends Parser {
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div.lnbad-tag");
+        util.removeChildElementsMatchingSelector(element, "div.lnbad-tag");
         super.removeUnwantedElementsFromContentElement(element);
-    }
-
-    clampSimultanousFetchSize() {
-        return 1;
     }
 
     findCoverImageUrl(dom) {

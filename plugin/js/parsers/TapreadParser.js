@@ -2,7 +2,7 @@
 
 parserFactory.register("tapread.com", () => new TapreadParser());
 
-class TapreadParser extends Parser{
+class TapreadParser extends Parser {
     constructor() {
         super();
     }
@@ -14,7 +14,7 @@ class TapreadParser extends Parser{
             chapters = this.fetchToc(dom.baseURI);
         }
         return chapters;
-    };
+    }
 
     static linkToChapter(link) {
         let title = link.querySelector("p");
@@ -41,17 +41,17 @@ class TapreadParser extends Parser{
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
-    };
+        return Parser.findConstructedContent(dom);
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("div.book-name");
-    };
+    }
 
     extractAuthor(dom) {
         let authorLabel = dom.querySelector("div.author > span.name");
         return (authorLabel === null) ? super.extractAuthor(dom) : authorLabel.textContent;
-    };
+    }
 
     findCoverImageUrl(dom) {
         return util.getFirstImgSrc(dom, "div.book-img");
@@ -84,7 +84,7 @@ class TapreadParser extends Parser{
         let header = newDoc.dom.createElement("h1");
         header.textContent = json.result.chapterName;
         newDoc.content.appendChild(header);
-        let content = new DOMParser().parseFromString(json.result.content, "text/html");
+        let content = util.sanitize(json.result.content);
         util.moveChildElements(content.body, newDoc.content);
         return newDoc.dom;
     }

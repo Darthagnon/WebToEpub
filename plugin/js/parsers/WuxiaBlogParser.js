@@ -2,7 +2,7 @@
 
 parserFactory.register("wuxia.blog", () => new WuxiaBlogParser());
 
-class WuxiaBlogParser extends Parser{
+class WuxiaBlogParser extends Parser {
     constructor() {
         super();
     }
@@ -28,8 +28,8 @@ class WuxiaBlogParser extends Parser{
         if (paginationUrl !== null) {
             let index = paginationUrl.lastIndexOf("/");
             let maxPage = parseInt(paginationUrl.substring(index + 1));
-            let prefix = paginationUrl.substring(0, index + 1)
-            for(let i = 2; i <= maxPage; ++i) {
+            let prefix = paginationUrl.substring(0, index + 1);
+            for (let i = 2; i <= maxPage; ++i) {
                 urls.push(prefix + i);
             }
         }
@@ -50,7 +50,7 @@ class WuxiaBlogParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "ul.pager, button, div.recently-nav, div.fb-like");
+        util.removeChildElementsMatchingSelector(element, "ul.pager, button, div.recently-nav, div.fb-like");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

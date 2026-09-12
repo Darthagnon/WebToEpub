@@ -2,7 +2,7 @@
 
 parserFactory.register("starlightstream.net", () => new StarlightstreamParser());
 
-class StarlightstreamParser extends Parser{
+class StarlightstreamParser extends Parser {
     constructor() {
         super();
     }
@@ -21,7 +21,7 @@ class StarlightstreamParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "[data-hook='buttonViewer']");
+        util.removeChildElementsMatchingSelector(element, "[data-hook='buttonViewer']");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

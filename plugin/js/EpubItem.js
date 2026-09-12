@@ -23,8 +23,7 @@ class EpubItem {
 
     // name of the item in the zip.
     getZipHref() {
-        let that = this;
-        return util.makeStorageFileName("OEBPS/Text/", that.index, that.chapterTitle, "xhtml");
+        return util.makeStorageFileName("OEBPS/Text/", this.index, this.chapterTitle, "xhtml");
     }
 
     getId() {
@@ -37,7 +36,7 @@ class EpubItem {
 
     hasSvg() {
         if (this.nodes != null) {
-            for(let n of this.nodes) {
+            for (let n of this.nodes) {
                 if ((n.nodeType === Node.ELEMENT_NODE) &&
                     (n.querySelector("svg") !== null)) {
                     return true;
@@ -51,21 +50,26 @@ class EpubItem {
         let xml = util.xmlToString(this.makeChapterDoc(emptyDocFactory));
         let errorMessage = contentValidator(xml);
         if (errorMessage) {
-            let errorMsg = chrome.i18n.getMessage("convertToXhtmlWarning", 
-                [this.chapterTitle, this.sourceUrl, errorMessage]
-            );
+            let errorMsg = UIText.Error.convertToXhtmlWarning(this.chapterTitle, this.sourceUrl, errorMessage);
             ErrorLog.log(errorMsg);
         }
         return xml;
     }
 
+    packInEpub(zipWriter, emptyDocFactory, contentValidator) {
+        let content = this.fileContentForEpub(emptyDocFactory, contentValidator);
+        zipWriter.add(this.getZipHref(), new zip.TextReader(content));
+    }
+
     makeChapterDoc(emptyDocFactory) {
         let doc = emptyDocFactory();
         let body = doc.getElementsByTagName("body")[0];
-        for(let node of this.nodes) {
-            let clone = doc.importNode(node, true);
-            body.appendChild(Sanitize.stripInvalidChars(clone));
-        };
+        for (let node of this.nodes) {
+            let clean = util.sanitizeNode(node);
+            if (clean) {
+                body.appendChild(clean);
+            }
+        }
         this.populateTitle(doc, body);
         delete(this.nodes);
         return doc;
@@ -87,26 +91,25 @@ class EpubItem {
     }
 
     *chapterInfo() {
-        let that = this;
-        for(let element of that.nodes) {
+        for (let element of this.nodes) {
             if (util.isHeaderTag(element)) {
                 yield {
                     depth: this.tagNameToTocDepth(element.tagName),
                     title: element.textContent,
-                    src: that.getZipHref()
+                    src: this.getZipHref()
                 };
-            };
-        };
+            }
+        }
     }
 
     getHyperlinks() {
         let links = [];
-        for(let element of this.nodes) {
+        for (let element of this.nodes) {
             if (element.nodeType === Node.ELEMENT_NODE) {
                 if (element.tagName.toLowerCase() === "a") {
                     links.push(element);
                 }
-                for(let link of element.querySelectorAll("a")) {
+                for (let link of element.querySelectorAll("a")) {
                     links.push(link);
                 }
             }
@@ -118,7 +121,7 @@ class EpubItem {
 //==============================================================
 // Construct an Epub item from source where each chapter 
 // was a separate HTML file.
-class ChapterEpubItem extends EpubItem {
+class ChapterEpubItem extends EpubItem { // eslint-disable-line no-unused-vars
     constructor(chapter, content, index) {
         super(chapter.sourceUrl);
         super.setIndex(index);
@@ -128,23 +131,21 @@ class ChapterEpubItem extends EpubItem {
     }
 
     *chapterInfo() {
-        let that = this;
-
-        let isStartOfNewArc = ((that.newArc !== null) && (that.newArc !== undefined));
+        let isStartOfNewArc = ((this.newArc !== null) && (this.newArc !== undefined));
         if (isStartOfNewArc) {
             yield {
                 depth: 0,
-                title: that.newArc,
-                src: that.getZipHref()
-            }
+                title: this.newArc,
+                src: this.getZipHref()
+            };
         }
 
-        if (typeof (that.chapterTitle) !== "undefined") {
+        if (typeof (this.chapterTitle) !== "undefined") {
             yield {
                 depth: 1,
-                title: that.chapterTitle,
-                src: that.getZipHref()
-            }
+                title: this.chapterTitle,
+                src: this.getZipHref()
+            };
         }
     }
 }
@@ -160,7 +161,7 @@ class ChapterEpubItem extends EpubItem {
     height: "full size" image height 
     width: "full size" image width
 */
-class ImageInfo extends EpubItem {
+class ImageInfo extends EpubItem { // eslint-disable-line no-unused-vars
     constructor(wrappingUrl, index, sourceUrl, dataOrigFileUrl) {
         super(sourceUrl);
         super.index = index;
@@ -177,9 +178,20 @@ class ImageInfo extends EpubItem {
     }
 
     getZipHref() {
-        let that = this;
-        let suffix = that.findImageSuffix(that.wrappingUrl);
-        return util.makeStorageFileName("OEBPS/Images/", that.index, that.getImageName(that.wrappingUrl), suffix);
+        let suffix = util.getDefaultExtensionByMime(this.mediaType) || this.findImageSuffix(this.wrappingUrl);
+        return util.makeStorageFileName("OEBPS/Images/", this.index, this.getImageName(this.wrappingUrl), suffix);
+    }
+
+    getBase64(maxLength) {
+        var binary = "";
+        var bytes = new Uint8Array(this.arraybuffer);
+        var len = bytes.byteLength;
+        if (maxLength > 0) len = Math.min(len, maxLength);
+        for (var i = 0; i < len; i++)
+        {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa( binary );
     }
 
     getId() {
@@ -194,14 +206,14 @@ class ImageInfo extends EpubItem {
         return this.mediaType;
     }
 
-    fileContentForEpub(emptyDocFactory, contentValidator) {   // eslint-disable-line no-unused-vars
-        return this.arraybuffer;
+    packInEpub(zipWriter) {
+        zipWriter.add(this.getZipHref(),
+            new zip.BlobReader(new Blob([this.arraybuffer])));
     }
 
     findImageSuffix(wrappingUrl) {
-        let that = this;
         let suffix = "";
-        let fileName = that.extractImageFileNameFromUrl(wrappingUrl)
+        let fileName = this.extractImageFileNameFromUrl(wrappingUrl);
         if (fileName != null) {
             let index = fileName.lastIndexOf(".");
             suffix = fileName.substring(index + 1);
@@ -209,14 +221,14 @@ class ImageInfo extends EpubItem {
 
         // if can't find suffix from file, use the media type
         if (fileName == null) {
-            let split = that.mediaType.split("/");
+            let split = this.mediaType.split("/");
             suffix = split[split.length - 1];
 
             // special case
             if (suffix === "svg+xml") {
                 suffix = "svg";
             }
-        };
+        }
         return suffix;
     }
 
@@ -260,10 +272,9 @@ class ImageInfo extends EpubItem {
     }
 
     getImageName(page) {
-        let that = this;
-        if(page){
-            let name = that.extractImageFileNameFromUrl(page);
-            if(name){
+        if (page) {
+            let name = this.extractImageFileNameFromUrl(page);
+            if (name) {
                 return name.split(/\./gi)[0];
             }
         }
@@ -294,7 +305,7 @@ class ImageInfo extends EpubItem {
         let body = doc.getElementsByTagName("body")[0];
         let wrapper = doc.createElementNS(util.XMLNS, wrappingTag);
         body.appendChild(wrapper);
-        let img = document.createElementNS(util.XMLNS,"img");
+        let img = doc.createElementNS(util.XMLNS,"img");
         if (wrappingTag === "span") {
             img.className = "inline";
         }
@@ -307,5 +318,17 @@ class ImageInfo extends EpubItem {
 
     *chapterInfo() {
         // images do not appear in table of contents
+    }
+}
+
+class FontInfo extends ImageInfo {
+    constructor(fontName) {
+        super();
+        this.fontName = fontName;
+    }
+
+    packInEpub(zipWriter) {
+        zipWriter.add("OEBPS/Fonts/"+this.fontName,
+            new zip.BlobReader(new Blob([this.arraybuffer])));
     }
 }

@@ -26,19 +26,21 @@ parserFactory.register("knoxt.space", () => new KnoxtspaceParser());
 parserFactory.register("lazygirltranslations.com", () => new LazygirltranslationsParser());
 //dead url
 parserFactory.register("novelsknight.com", () => new NoblemtlParser());
-//dead url
-parserFactory.register("cyborg-tl.com", () => new NoblemtlParser());
+parserFactory.register("novelsknight.punchmanga.online", () => new NovelsknightlParser());
+parserFactory.register("cyborg-tl.com", () => new CyborgTlParser());
 
 parserFactory.register("pandamtl.com", () => new NoblemtlParser());
 parserFactory.register("universalnovel.com", () => new NoblemtlParser());
 parserFactory.register("whitemoonlightnovels.com", () => new WhitemoonlightnovelsParser());
+
+parserFactory.register("my-novel.online", () => new MyNovelOnlineParser());
 
 parserFactory.registerRule(
     (url, dom) => NoblemtlParser.isNoblemtlTheme(dom) * 0.7,
     () => new NoblemtlParser()
 );
 
-class NoblemtlParser extends Parser{
+class NoblemtlParser extends Parser {
     constructor() {
         super();
     }
@@ -51,12 +53,13 @@ class NoblemtlParser extends Parser{
     async getChapterUrls(dom) {
         return [...dom.querySelectorAll("div.eplister a")]
             .map(this.linkToChapter)
-            .reverse()
+            .reverse();
     }
 
     linkToChapter(link) {
+        let titleName = link.querySelector(".epl-title")?.textContent?.trim() ?? "";
         let title = NoblemtlParser.extractChapterNum(link).trim() + " "
-            + link.querySelector(".epl-title").textContent.trim();
+            + titleName;
         return ({
             sourceUrl:  link.href,
             title: title
@@ -84,9 +87,9 @@ class NoblemtlParser extends Parser{
             .filter(p => p.style.opacity === "0");
         util.removeElements(toRemove);
         util.removeElements(this.findEmptySpanElements(element));
-        util.removeChildElementsMatchingCss(element, "span.modern-footnotes-footnote__note");
-        util.removeChildElementsMatchingCss(element, "span.footnote_tooltip");
-        util.removeChildElementsMatchingCss(element, "div#hpk");
+        util.removeChildElementsMatchingSelector(element, "span.modern-footnotes-footnote__note");
+        util.removeChildElementsMatchingSelector(element, "span.footnote_tooltip");
+        util.removeChildElementsMatchingSelector(element, "div#hpk");
         super.removeUnwantedElementsFromContentElement(element);
     }
 
@@ -106,7 +109,7 @@ class NoblemtlParser extends Parser{
             if (element != null) {
                 title += " " +  element.textContent;
             }
-        }
+        };
         addText("h1.entry-title");
         addText(".cat-series");
         return title;
@@ -117,7 +120,7 @@ class NoblemtlParser extends Parser{
     }
 
     preprocessRawDom(webPageDom) {
-        util.removeChildElementsMatchingCss(webPageDom, "div.saboxplugin-wrap, div.code-block");
+        util.removeChildElementsMatchingSelector(webPageDom, "div.saboxplugin-wrap, div.code-block");
     }
 
     getInformationEpubItemChildNodes(dom) {
@@ -128,7 +131,7 @@ class NoblemtlParser extends Parser{
     }
 }
 
-class KnoxtspaceParser extends NoblemtlParser{
+class KnoxtspaceParser extends NoblemtlParser {
     constructor() {
         super();
     }
@@ -136,16 +139,36 @@ class KnoxtspaceParser extends NoblemtlParser{
     findChapterTitle(dom) {
         return NoblemtlParser.buildChapterTitle(dom);
     }
+
+    stripAdverts(node) {
+        // On Knoxt chapters, first code-block contains chapter text and advert
+        for (let block of node.querySelectorAll("div.code-block")) {
+            util.removeChildElementsMatchingSelector(
+                block,
+                "center, div.ad-container"
+            );
+            util.flattenNode(block);
+        }
+    }
+
+    preprocessRawDom(webPageDom) {
+        this.stripAdverts(webPageDom);
+        super.preprocessRawDom(webPageDom);
+    }
+
+    cleanInformationNode(node) {
+        this.stripAdverts(node);
+    }
 }
 
-class WhitemoonlightnovelsParser extends NoblemtlParser{
+class WhitemoonlightnovelsParser extends NoblemtlParser {
     constructor() {
         super();
     }
 
     async getChapterUrls(dom) {
         return [...dom.querySelectorAll("div.eplister a")]
-            .map(this.linkToChapter)
+            .map(this.linkToChapter);
     }
 
     findChapterTitle(dom) {
@@ -153,11 +176,11 @@ class WhitemoonlightnovelsParser extends NoblemtlParser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, ".code-block");
+        util.removeChildElementsMatchingSelector(node, ".code-block");
     }
 }
 
-class LazygirltranslationsParser extends KnoxtspaceParser{
+class LazygirltranslationsParser extends KnoxtspaceParser {
     constructor() {
         super();
     }
@@ -169,5 +192,56 @@ class LazygirltranslationsParser extends KnoxtspaceParser{
         }
         let menu = dom.querySelector(".page");
         return util.hyperlinksToChapterList(menu);        
+    }
+}
+
+class MyNovelOnlineParser extends NoblemtlParser {
+    constructor() {
+        super();
+        this.minimumThrottle = 3000;
+    }
+
+    findChapterTitle(dom) {
+        return dom.querySelector(".epheader .entry-title");
+    }
+
+    findContent(dom) {
+        let content = dom.querySelector(".epwrapper .epcontent");
+        //there are random links embeded everywhere i think it is to boost other sites on google as the other site is "relevant"
+        for (let e of content.querySelectorAll("p.chapter a.num-link")) {
+            let pnode = dom.createElement("span");
+            pnode.textContent = e.innerText;
+            e.replaceWith(pnode);
+        }
+        return content;
+    }
+
+    removeUnwantedElementsFromContentElement(content) {
+        util.removeElements(content.querySelectorAll("div.post-views, div.chapter-protected-message"));
+        super.removeUnwantedElementsFromContentElement(content);
+    }
+}
+
+class NovelsknightlParser extends NoblemtlParser {
+    constructor() {
+        super();
+        this.minimumThrottle = 3000;
+    }
+
+    findContent(dom) {
+        return dom.querySelector("[itemprop='text']");
+    }
+}
+
+class CyborgTlParser extends NoblemtlParser {
+    constructor() {
+        super();
+    }
+
+    customRawDomToContentStep(chapter) {
+        let crypt = chapter.rawDom.querySelector("#js-post-content");
+        if (crypt) {
+            crypt.textContent = crypt.getAttribute("data-obf");
+        }
     }
 }

@@ -2,7 +2,7 @@
 
 parserFactory.register("dasuitl.com", () => new DasuitlParser());
 
-class DasuitlParser extends WordpressBaseParser{
+class DasuitlParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -12,7 +12,7 @@ class DasuitlParser extends WordpressBaseParser{
     }    
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".wp-block-buttons");
+        util.removeChildElementsMatchingSelector(element, ".wp-block-buttons");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

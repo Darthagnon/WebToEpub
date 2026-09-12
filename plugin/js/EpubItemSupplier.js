@@ -5,7 +5,7 @@
 
 "use strict";
 
-class EpubItemSupplier {
+class EpubItemSupplier { // eslint-disable-line no-unused-vars
     constructor(parser, epubItems, imageCollector) {
         this.parser = parser;
         this.epubItems = [];
@@ -14,7 +14,7 @@ class EpubItemSupplier {
         imageCollector.imagesToPackInEpub().forEach(image => this.epubItems.push(image));
         epubItems.forEach(item => this.epubItems.push(item));
         this.coverImageId = () => this.coverImageInfo.getId();
-    };
+    }
 
 
     // used to populate manifest
@@ -34,16 +34,21 @@ class EpubItemSupplier {
 
     // used to populate table of contents
     *chapterInfo() {
-        for(let epubItem of this.epubItems) {
+        for (let epubItem of this.epubItems) {
             yield* epubItem.chapterInfo();
-        };
+        }
     }
 
-    makeCoverImageXhtmlFile(emptyDocFactory) {
+    makeCoverImageXhtmlFile(emptyDocFactory, title) {
         let doc = emptyDocFactory();
         let body = doc.getElementsByTagName("body")[0];
         let userPreferences = this.imageCollector.userPreferences;
         body.appendChild(this.coverImageInfo.createImageElement(userPreferences));
+
+        if (title) {
+            doc.querySelector("title").text = title;
+        }
+
         return util.xmlToString(doc);
     }
 

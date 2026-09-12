@@ -1,8 +1,8 @@
 "use strict";
 
-parserFactory.register("archiveofourown.org", function() { return new ArchiveOfOurOwnParser() });
+parserFactory.register("archiveofourown.org", () => new ArchiveOfOurOwnParser());
 
-class ArchiveOfOurOwnParser extends Parser{
+class ArchiveOfOurOwnParser extends Parser {
     constructor() {
         super();
     }
@@ -12,7 +12,7 @@ class ArchiveOfOurOwnParser extends Parser{
         if (isSeries) {
             let chapters = [];
             let works = [...dom.querySelectorAll("ul.series.work > li")];
-            for(let work of works) {
+            for (let work of works) {
                 let partialList = await this.processWorkElement(work);
                 chapterUrlsUI.showTocProgress(partialList);
                 chapters = chapters.concat(partialList);
@@ -28,7 +28,7 @@ class ArchiveOfOurOwnParser extends Parser{
             let chaptersUrl = dom.querySelector("ul#chapter_index a");
             return this.fetchChapterUrls(chaptersUrl);
         }
-    };
+    }
 
     async processWorkElement(work) {
         let chaptersLink = work.querySelector("dd.chapters a");
@@ -74,25 +74,33 @@ class ArchiveOfOurOwnParser extends Parser{
     // find the node(s) holding the story content
     findContent(dom) {
         return dom.querySelector("div#chapters");
-    };
+    }
 
-    populateUI(dom) {
-        super.populateUI(dom);
+    populateUIImpl() {
         document.getElementById("removeAuthorNotesRow").hidden = false; 
     }
 
     extractTitleImpl(dom) {
-        return dom.querySelector("h2.heading")
-    };
+        return dom.querySelector("h2.heading");
+    }
 
     extractAuthor(dom) {
         let author = dom.querySelector("a[rel='author']")?.innerText;
         return author ?? super.extractAuthor(dom);
-    };
+    }
 
     extractLanguage(dom) {
         return dom.querySelector("meta[name='language']").getAttribute("content");
-    };
+    }
+
+    extractSubject(dom) {
+        let tags = ([...dom.querySelectorAll(".meta .tags a")]);
+        return tags.map(e => e.textContent.trim()).join(", ");
+    }
+
+    extractDescription(dom) {
+        return dom.querySelector("div.summary blockquote")?.textContent.trim();
+    }
 
     findChapterTitle(dom) {
         let contentHasTitle = dom.querySelector("h3.title");
@@ -110,7 +118,7 @@ class ArchiveOfOurOwnParser extends Parser{
             util.removeElements(notes.slice(1));
         }
 
-        util.removeChildElementsMatchingCss(element, "h3.landmark.heading");
+        util.removeChildElementsMatchingSelector(element, "h3.landmark.heading");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

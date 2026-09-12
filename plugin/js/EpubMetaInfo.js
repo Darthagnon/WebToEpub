@@ -14,15 +14,17 @@
     <param name="seriesIndex" type="string">If book is part of series, has index of book in series.  null if not part of a series</param>
 */
 class EpubMetaInfo {
-    constructor () {
-        this.uuid = chrome.i18n.getMessage("defaultUUID");
-        this.title = chrome.i18n.getMessage("defaultTitle");
-        this.author = chrome.i18n.getMessage("defaultAuthor");
+    constructor() {
+        this.uuid = UIText.Default.uuid;
+        this.title = UIText.Default.title;
+        this.author = UIText.Default.author;
 
         this.language = "en";
         this.fileName = "web.epub";
         this.subject = "";
         this.description = "";
+        this.publisher = "";
+        this.datePublished = null;
         this.seriesName = null;
         this.seriesIndex = null;
         this.styleSheet = EpubMetaInfo.getDefaultStyleSheet();
@@ -155,29 +157,22 @@ class EpubMetaInfo {
         "}";
     }
 
-    static getEpubMetaAddInfo(dom, url, allTags){
+    static getEpubMetaAddInfo(dom, url, allTags) {
         let metaAddInfo = new EpubAddMetaInfo();
 
         //novelupdates
-        if (url.includes("novelupdates.com") == true){
+        if (url.includes("novelupdates.com") == true) {
             metaAddInfo.subject = EpubMetaInfo.addSubjectNovelupdate(dom, allTags);
             metaAddInfo.description = EpubMetaInfo.addDescriptionNovelupdate(dom);
             metaAddInfo.author = EpubMetaInfo.addAuthorNovelupdate(dom);
-        }
-
-        //wlnupdates
-        else if(url.includes("wlnupdates.com") == true){
-            metaAddInfo.subject = EpubMetaInfo.addSubjectWinupdates(dom, allTags);
-            metaAddInfo.description = EpubMetaInfo.addDescriptionWinupdates(dom);
-            metaAddInfo.author = EpubMetaInfo.addAuthorWinupdates(dom);
         } else {
-            let test = "Error: Fetch of URL '" + url + "' failed to fetch please check if website is novelupdates.com or wlnupdates.com.";
+            let test = "Error: Fetch of URL '" + url + "' failed to fetch, please check if website is novelupdates.com";
             ErrorLog.showErrorMessage(test);
         }
         return metaAddInfo;
     }
     
-    static addSubjectNovelupdate(dom, allTags){
+    static addSubjectNovelupdate(dom, allTags) {
         let selector = "#seriesgenre .genre";
         if (allTags) {
             selector += ", #showtags .genre";
@@ -185,28 +180,12 @@ class EpubMetaInfo {
         return EpubMetaInfo.buildSubjectFromTags(dom, selector);
     }
 
-    static addDescriptionNovelupdate(dom){
+    static addDescriptionNovelupdate(dom) {
         return dom.querySelector("#editdescription").textContent.replace(/\n+/g, "\n").replace(/\n/g, "\n\n");
     }
     
-    static addAuthorNovelupdate(dom){
+    static addAuthorNovelupdate(dom) {
         return dom.querySelector("#authtag").textContent;
-    }
-
-    static addSubjectWinupdates(dom, allTags){
-        let selector = "#genre-container .multiitem a";
-        if (allTags) {
-            selector += ", #tag .multiitem a";
-        }
-        return EpubMetaInfo.buildSubjectFromTags(dom, selector);
-    }
-
-    static addDescriptionWinupdates(dom){
-        return dom.querySelector("#description .description").textContent;
-    }
-        
-    static addAuthorWinupdates(dom){
-        return dom.querySelector("#author .multiitem a").textContent;
     }
 
     static buildSubjectFromTags(dom, selector) {
@@ -217,7 +196,7 @@ class EpubMetaInfo {
 
     static decensor(tag) {
         if (tag.includes("*")) {
-            for(let j = 0; j < EpubMetaInfo.decensorList.length; j += 2) {
+            for (let j = 0; j < EpubMetaInfo.decensorList.length; j += 2) {
                 let cyphertext = EpubMetaInfo.decensorList[j];
                 let cleartext = EpubMetaInfo.decensorList[j + 1];
                 if (tag.includes(cyphertext)) {
@@ -269,10 +248,9 @@ EpubMetaInfo.decensorList = [
     "Virg*n", "Virgin"];
 
 class EpubAddMetaInfo {
-    constructor () {
+    constructor() {
         this.subject = "";
         this.description = "";
         this.author = "";
     }
 }
-

@@ -2,7 +2,7 @@
 
 parserFactory.register("meionovel.id", () => new MeionovelParser());
 
-class MeionovelParser extends Parser{
+class MeionovelParser extends Parser {
     constructor() {
         super();
     }
@@ -21,7 +21,7 @@ class MeionovelParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div#text-chapter-toolbar");
+        util.removeChildElementsMatchingSelector(element, "div#text-chapter-toolbar");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

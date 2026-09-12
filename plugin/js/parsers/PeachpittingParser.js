@@ -2,7 +2,7 @@
 
 parserFactory.register("peachpitting.com", () => new PeachpittingParser());
 
-class PeachpittingParser extends Parser{
+class PeachpittingParser extends Parser {
     constructor() {
         super();
     }
@@ -21,7 +21,7 @@ class PeachpittingParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".pp-multiple-authors-wrapper");
+        util.removeChildElementsMatchingSelector(element, ".pp-multiple-authors-wrapper");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

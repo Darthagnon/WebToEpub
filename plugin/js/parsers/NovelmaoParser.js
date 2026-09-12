@@ -2,14 +2,14 @@
 
 parserFactory.register("novelmao.com", () => new NovelmaoParser());
 
-class NovelmaoParser extends Parser{
+class NovelmaoParser extends Parser {
     constructor() {
         super();
     }
 
     async getChapterUrls(dom) {
         let menu = dom.querySelector("ul.chapter-list");
-        util.removeChildElementsMatchingCss(menu, "span.time");
+        util.removeChildElementsMatchingSelector(menu, "span.time");
         return util.hyperlinksToChapterList(menu).reverse();
     }
 
@@ -23,7 +23,7 @@ class NovelmaoParser extends Parser{
 
     removeUnwantedElementsFromContentElement(element) {
         element.querySelector("div.entry-content").removeAttribute("[class]");
-        util.removeChildElementsMatchingCss(element, "div.chapter-nav, " +
+        util.removeChildElementsMatchingSelector(element, "div.chapter-nav, " +
             "p.china, div.snpconainer, amp-selector, div#popupreport"
         );
         super.removeUnwantedElementsFromContentElement(element);

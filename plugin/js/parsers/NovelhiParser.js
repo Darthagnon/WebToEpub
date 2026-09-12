@@ -2,24 +2,23 @@
 
 parserFactory.register("novelhi.com", () => new NovelhiParser());
 
-class NovelhiParser extends Parser{
+class NovelhiParser extends Parser {
     constructor() {
         super();
     }
 
     async getChapterUrls(dom) {
-        let tocUrl = dom.querySelector("div.bookChapter a.fr");
+        let tocUrl = dom.querySelector("div.bookChapter a.fr").href;
         let tocDom = (await HttpClient.wrapFetch(tocUrl)).responseXML;
         return [...tocDom.querySelectorAll("div.dirList a")]
-            .map(a => NovelhiParser.LinkToChapter(a, dom.baseURI));
+            .map(a => NovelhiParser.LinkToChapter(a));
     }
 
-    static LinkToChapter(link, baseURI) {
-        let onclick = link.getAttribute("onClick").split("'");
+    static LinkToChapter(link) {
         return {
-            sourceUrl: baseURI + "/" + onclick[1],
-            title: link.querySelector("span").textContent            
-        }
+            sourceUrl: link.href,
+            title: link.querySelector("span").textContent
+        };
     }
 
     findContent(dom) {
@@ -43,7 +42,7 @@ class NovelhiParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "a");        
+        util.removeChildElementsMatchingSelector(node, "a");        
         return node;
     }    
 }

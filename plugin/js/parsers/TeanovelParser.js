@@ -4,7 +4,7 @@ parserFactory.register("teanovel.com", () => new TeanovelParser());
 //dead url
 parserFactory.register("teanovel.net", () => new TeanovelParser());
 
-class TeanovelParser extends Parser{
+class TeanovelParser extends Parser {
     constructor() {
         super();
     }
@@ -30,11 +30,11 @@ class TeanovelParser extends Parser{
     }
 
     extractTitleImpl(dom) {
-        return dom.querySelector("h1");;
+        return dom.querySelector("h1");
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "flex");
+        util.removeChildElementsMatchingSelector(element, "flex");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

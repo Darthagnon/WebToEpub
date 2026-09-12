@@ -3,30 +3,22 @@
 */
 "use strict";
 
-class Imgur {
+class Imgur { // eslint-disable-line no-unused-vars
     constructor() {
     }
 
-    static expandGalleries(content, parentPageUrl) {
-        let sequence = Promise.resolve();
-        for(let link of Imgur.getGalleryLinksToReplace(content)) {
-            sequence = sequence.then(function () {
-                let href = Imgur.fixupImgurGalleryUrl(link.href);
-                return HttpClient.wrapFetch(href).then(function (xhr) {
-                    Imgur.replaceGalleryHyperlinkWithImages(link, xhr.responseXML);
-                    return Promise.resolve();
-                }).catch(function (err) {
-                    let errorMsg = chrome.i18n.getMessage("imgurFetchFailed", 
-                        [link.href, parentPageUrl, err]);
-                    ErrorLog.log(errorMsg);
-                    return Promise.resolve();
-                });
-            })
-        };
-        sequence = sequence.then(function () {
-            return Promise.resolve(content);
-        });
-        return sequence; 
+    static async expandGalleries(content, parentPageUrl) {
+        for (let link of Imgur.getGalleryLinksToReplace(content)) {
+            let href = Imgur.fixupImgurGalleryUrl(link.href);
+            try { 
+                let xhr = await HttpClient.wrapFetch(href);
+                Imgur.replaceGalleryHyperlinkWithImages(link, xhr.responseXML);
+            } catch (err) {
+                let errorMsg = UIText.Error.imgurFetchFailed(link.href, parentPageUrl, err);
+                ErrorLog.log(errorMsg);
+            }
+        }
+        return content; 
     }
 
     static isImgurGallery(dom) {
@@ -47,12 +39,12 @@ class Imgur {
         let doc = document.implementation.createHTMLDocument();
         let div = doc.createElement("div");
         doc.body.appendChild(div);
-        for(let item of imagesList) {
+        for (let item of imagesList) {
             let img = doc.createElement("img");
             // ToDo: use real image to build URI
             img.src = "http://i.imgur.com/" + item.hash + item.ext;
             div.appendChild(img);
-        };
+        }
         return div;
     }
 
@@ -70,12 +62,12 @@ class Imgur {
     static findImagesJson(dom) {
         // Ugly hack, need to find the list of images as image links are created dynamically in HTML.
         // Obviously this will break each time imgur change their scripts.
-        for(let text of Imgur.scriptsWithRunSlots(dom)) {
+        for (let text of Imgur.scriptsWithRunSlots(dom)) {
             let json = util.locateAndExtractJson(text, "item:");
             if (json != null) {
                 return json;
             }
-        };
+        }
         return null;
     }
 

@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("jade-rabbit.net", () => new JadeRabbitParser());
 
-class JadeRabbitParser extends Parser{
+class JadeRabbitParser extends Parser {
     constructor() {
         super();
     }
@@ -22,7 +22,7 @@ class JadeRabbitParser extends Parser{
     }
 
     static nextTocPageUrl(dom) {
-        let link = dom.querySelector("div.older a")
+        let link = dom.querySelector("div.older a");
         return link === null ? null : link.href;
     }
 
@@ -35,7 +35,7 @@ class JadeRabbitParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div.wp-block-ugb-container, "
+        util.removeChildElementsMatchingSelector(element, "div.wp-block-ugb-container, "
             + "div.wp-block-uagb-buttons, div.notranslate, div.post-tags");
         super.removeUnwantedElementsFromContentElement(element);
     }

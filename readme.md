@@ -11,7 +11,7 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
  <div align="center">
-   
+
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -54,7 +54,7 @@
           <a href="#built-with">Built With</a>
           <ul>
             <li><a href="#libraries-used-in-webtoepub">Libraries used (in WebToEpub)</a></li>
-            <li><a href="#libraries-used-by-webtoepub-build-process">Libraries used by WebToEpub build process</a></li>  
+            <li><a href="#libraries-used-by-webtoepub-build-process">Libraries used by WebToEpub build process</a></li>
         </li>
       </ul>
     </li>
@@ -272,7 +272,9 @@ WebToEpub is a browser extension for Firefox and Chrome that converts web novels
     <li>kemono.su</li>
     <li>knoxt.space</li>
     <li>kobatochan.com</li>
+    <li>konkon.ink</li>
     <li>krytykal.org</li>
+    <li>kuupress.com</li>
     <li>lazygirltranslations.com</li>
     <li>liberspark.com</li>
     <li>libread.com</li>
@@ -532,6 +534,7 @@ WebToEpub is a browser extension for Firefox and Chrome that converts web novels
     <li>wanderinginn.com</li>
     <li>watashiwasugoidesu.com</li>
     <li>wattpad.com</li>
+    <li>wetriedtls.com</li>
     <li>webnovel.com</li>
     <li>webnovel.live</li>
     <li>webnovelonline.com</li>
@@ -595,7 +598,8 @@ WebToEpub is a browser extension for Firefox and Chrome that converts web novels
 
 ##### Libraries used (in WebToEpub)
 
-- jszip
+- zip.js
+- DOMPurify
 
 #### Libraries used by WebToEpub build process
 
@@ -640,6 +644,22 @@ Open Chrome (or any Chromium-based browser like Edge, Opera, etc.) and go to [We
 5. Press the "Load unpacked extension.." button and browse to unpacked zip directory from step 2.
    ![wte-chrome-small](https://user-images.githubusercontent.com/20068737/136224439-57af48bd-21fb-463d-99db-74f44769327e.gif)
 
+### Android (Firefox Nightly for Developers)
+
+#### From Firefox Add-ons Store
+
+Open Firefox and visit [WebToEpub on Firefox Add-ons][firefox-add-ons].
+
+#### From Source (Firefox Nightly for Developers)
+
+1. Download prebuilt Firefox version of extension from https://github.com/dteviot/WebToEpub/releases/tag/developer-build.
+2. Open the site "about:config"
+3. Search "xpinstall.signatures.required" and set the value to false.
+4. Open Settings and scoll down to "About Firefox Nightly"
+5. Tap the Firefox Nightly icon (blue fox) 6 times to enable Debug menu
+6. Open Settings -> Advanced -> Install extension from file
+4. Select the zip file you downloaded in step 1.
+
 ### From Source (Developers)
 
 1. Clone this repo.
@@ -656,18 +676,13 @@ Open Chrome (or any Chromium-based browser like Edge, Opera, etc.) and go to [We
    - This will produce 3 files in the eslint directory.
      - WebToEpub0.0.0.x.xpi (Firefox version of plug-in)
      - WebToEpub0.0.0.x.zip (Chrome version of plug-in)
-     - packed.js
+     - packed.js (concatenated JS for linting - don't edit this file directly)
    - Lint tests are OK if output ends with `Wrote Zip to disk; Done in XXXs.`
+   - To auto-fix lint errors run `npm run lint:fix`
 
 3. Install extension in browser of choice, using instructions above.
 
 See [notes](#notes) for more information.
-
-### Android (untested)
-
-- Caution I have not (and do not test) on Android. I've been told the following work, but I can't guarantee them.
-- Get yourself `Kiwi browser`, `Yandex browser`, or `Firefox`.
-- Install from [Chrome web store][chrome-web-store] for Kiwi and Yandex, or from [Mozilla add-ons][firefox-add-ons] for Firefox.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -753,7 +768,7 @@ Don't forget to give the project a star! Thanks again!
     <li>Kondeeza</li>
     <li>Mathnerd314</li>
     <li>Sickan90</li>
-    <li>Miracutor</li>
+    <li>mddanish00</li>
     <li>Kiradien</li>
     <li>Synteresis</li>
     <li>Lej77</li>
@@ -777,6 +792,49 @@ Don't forget to give the project a star! Thanks again!
     <li>Jemeni11</li>
     <li>maforn</li>
     <li>phazei</li>
+    <li>rizkiv1</li>
+    <li>pavan3999</li>
+    <li>Anartigone</li>
+    <li>crybx</li>
+    <li>ltsKbrc</li>
+    <li>Ori Avtalion</li>
+    <li>NamTH</li>
+    <li>minhngoc25a</li>
+    <li>basitcodeenv</li>
+    <li>X-Xadro</li>
+    <li>Yomafil</li>
+    <li>Varun Patkar</li>
+    <li>Peter Kaufman</li>
+    <li>patiorjunrick</li>
+    <li>MD Shabrez</li>
+    <li>jurassicplayer</li>
+    <li>X2E4VXpZKv</li>
+    <li>meson1271 (Parser for jadescrolls.com and sakuraze.vercel.app)</li>
+    <li>AgatZan (Parser for ficbook.net)</li>
+    <li>Joel Sunil</li>
+    <li>nothing0074</li>
+    <li>Justin Mott</li>
+    <li>mobedoor</li>
+    <li>nitramkh</li>
+    <li>s4daharu</li>
+    <li>crn0</li>
+    <li>meowmereo</li>
+    <li>Matthew Song</li>
+    <li>senia-psm</li>
+    <li>ltmerletti</li>
+    <li>thanhlouis</li>
+    <li>fnx4</li>
+    <li>Fox6935</li>
+    <li>ARYAN-9099</li>
+    <li>possibletoactual (Royal Road redesign fix)</li>
+    <li>kuwoyuki</li>
+    <li>bendur</li>
+    <li>Bartuzen</li>
+    <li>kerimmkirac</li>
+    <li>baalthasar</li>
+    <li>David Siewert</li>
+    <li>MineRobber9000 (Parser for konkon.ink and kuupress.com)</li>
+    <li>KitKat31337 (TWKAN paragraph markup fix)</li>
   </ul>
 </details>
 
@@ -790,7 +848,7 @@ Licensed under GPLv3. See [LICENSE][license-url] for more information.
 
 WebToEpub uses the following libraries:
 
-- JSZip library v3.7.1: https://github.com/Stuk/jszip, which is dual licensed with the MIT license or GPLv3.
+- zip.js library v2.7.57: https://github.com/gildas-lormeau/zip.js, licensed under BSD 3-Clause.
 - quint: http://qunitjs.com/, licensed under MIT license.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -863,7 +921,7 @@ Project Link: [https://github.com/dteviot/WebToEpub](https://github.com/dteviot/
 [issues-shield]: https://img.shields.io/github/issues/dteviot/WebToEpub.svg?style=for-the-badge
 [issues-url]: https://github.com/dteviot/WebToEpub/issues
 
-<!-- GitHub can't automtically ID the current license so let's hard code it -->
+<!-- GitHub can't automatically ID the current license so let's hard code it -->
 
 [license-shield]: https://img.shields.io/badge/LICENSE-GPLv3-%23555555?style=for-the-badge&label=LICENSE&color=285959
 [license-url]: /LICENSE.md

@@ -2,24 +2,48 @@
 
 parserFactory.register("shanghaifantasy.com", () => new ShanghaifantasyParser());
 
-class ShanghaifantasyParser extends Parser{
+class ShanghaifantasyParser extends Parser {
     constructor() {
         super();
     }
 
-    async getChapterUrls(dom) {
-        let tocUrl = this.buildTocUrl(dom);
-        let json = (await HttpClient.fetchJson(tocUrl)).json;
-        return this.buildChapterUrls(json);
-    }
-
-    buildTocUrl(dom) {
+    async getChapterUrls(dom, chapterUrlsUI) {
         let category = dom.querySelector("ul#chapterList")?.getAttribute("data-cat");
-        return `https://shanghaifantasy.com/wp-json/fiction/v1/chapters?category=${category}&order=asc&page=1&per_page=10000`;
+        let allChapters = [];
+        let page = 1;
+        let hasMore = true;
+        while (hasMore) {
+            let tocUrl = `https://shanghaifantasy.com/wp-json/fiction/v1/chapters?category=${category}&order=asc&page=${page}&per_page=100`;
+            try {
+                let json = (await HttpClient.fetchJson(tocUrl)).json;
+                if (!json || json.length === 0) {
+                    break;
+                }
+                let chapters = this.buildChapterUrls(json);
+                allChapters = allChapters.concat(chapters);
+                
+                if (chapterUrlsUI) {
+                    chapterUrlsUI.showTocProgress(chapters);
+                }
+                
+                if (json.length < 100) {
+                    break;
+                }
+                page++;
+                await this.rateLimitDelay();
+            } catch (err) {
+                if (allChapters.length > 0) {
+                    break;
+                } else {
+                    throw err;
+                }
+            }
+        }
+        return allChapters;
     }
 
     buildChapterUrls(json) {
-        return json.map(a => ({
+        return json.filter(a => !a.locked).map(a => ({
             title: a.title,
             sourceUrl: a.permalink 
         }));
@@ -34,13 +58,23 @@ class ShanghaifantasyParser extends Parser{
     }
 
     extractTitleImpl(dom) {
-        return dom.querySelector("title")?.textContent ?? null;;
+        let title = dom.querySelector("p.font-secondary")?.textContent;
+        return title || super.extractTitleImpl(dom);
+    }
+
+    extractAuthor(dom) {
+        let pElements = [...dom.querySelectorAll("div.grid p")];
+        let authorElement = pElements.find(p => p.textContent.includes("Author:"));
+        if (authorElement) {
+            return authorElement.textContent.replace("Author:", "").trim();
+        }
+        return super.extractAuthor(dom);
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".patreon1, section, nav, button, template, #comments, footer, .hideme");
+        util.removeChildElementsMatchingSelector(element, ".patreon1, section, nav, button, template, #comments, footer, .hideme");
 
-        for(let e of [...element.querySelectorAll("div")]) {
+        for (let e of [...element.querySelectorAll("div")]) {
             e.removeAttribute(":style");
             e.removeAttribute(":class");
             e.removeAttribute("@click.outside");
@@ -54,7 +88,8 @@ class ShanghaifantasyParser extends Parser{
     }
 
     findCoverImageUrl(dom) {
-        return util.getFirstImgSrc(dom, ".flex-col");
+        let img = dom.querySelector("div.md\\:max-w-3xl > img");
+        return img ? img.src : super.findCoverImageUrl(dom);
     }
 
     getInformationEpubItemChildNodes(dom) {

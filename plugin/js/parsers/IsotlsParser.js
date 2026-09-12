@@ -2,7 +2,7 @@
 
 parserFactory.register("isotls.com", () => new IsotlsParser());
 
-class IsotlsParser extends Parser{
+class IsotlsParser extends Parser {
     constructor() {
         super();
     }
@@ -21,7 +21,7 @@ class IsotlsParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "header, nav, footer");
+        util.removeChildElementsMatchingSelector(element, "header, nav, footer");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

@@ -3,21 +3,22 @@
 */
 "use strict";
 
-parserFactory.register("bakapervert.wordpress.com", function() { return new WordpressBaseParser() });
-parserFactory.register("crimsonmagic.me", function() { return new WordpressBaseParser() });
-parserFactory.register("shalvationtranslations.wordpress.com", function() { return new WordpressBaseParser() });
-parserFactory.register("frostfire10.wordpress.com", function() { return new WordpressBaseParser() });
-parserFactory.register("isekaicyborg.wordpress.com", function() { return new WordpressBaseParser() });
-parserFactory.register("moonbunnycafe.com", function() { return new WordpressBaseParser() });
+parserFactory.register("bakapervert.wordpress.com", () => new WordpressBaseParser());
+parserFactory.register("crimsonmagic.me", () => new WordpressBaseParser());
+parserFactory.register("shalvationtranslations.wordpress.com", () => new WordpressBaseParser());
+parserFactory.register("frostfire10.wordpress.com", () => new WordpressBaseParser());
+parserFactory.register("isekaicyborg.wordpress.com", () => new WordpressBaseParser());
+parserFactory.register("moonbunnycafe.com", () => new WordpressBaseParser());
 //dead url
-parserFactory.register("rainingtl.org", function() { return new WordpressBaseParser() });
+parserFactory.register("rainingtl.org", () => new WordpressBaseParser());
 //dead url
-parserFactory.register("raisingthedead.ninja", function() { return new WordpressBaseParser() });
+parserFactory.register("raisingthedead.ninja", () => new WordpressBaseParser());
 //dead url
-parserFactory.register("skythewoodtl.com", function() { return new WordpressBaseParser() });
+parserFactory.register("skythewoodtl.com", () => new WordpressBaseParser());
 //dead url
-parserFactory.register("yoraikun.wordpress.com", function() { return new WordpressBaseParser() });
-parserFactory.register("wanderertl130.id", function() { return new Wanderertl130Parser() });
+parserFactory.register("yoraikun.wordpress.com", () => new WordpressBaseParser());
+parserFactory.register("wanderertl130.id", () => new Wanderertl130Parser());
+parserFactory.register("sasakitomyiano.wordpress.com", () => new WordpressBaseParser());
 
 parserFactory.registerRule(
     // return probability (0.0 to 1.0) web page is a Wordpress page
@@ -29,8 +30,8 @@ parserFactory.registerRule(
 );
 
 parserFactory.registerManualSelect(
-    "Wordpress", 
-    function() { return new WordpressBaseParser() }
+    "Wordpress",
+    () => new WordpressBaseParser()
 );
 
 class WordpressBaseParser extends Parser {
@@ -46,7 +47,9 @@ class WordpressBaseParser extends Parser {
 
     static findContentElement(dom) {
         return dom.querySelector("div.entry-content") ||
-            dom.querySelector("div.post-content");
+            dom.querySelector("div.post-content") ||
+            dom.querySelector("ul.wp-block-post-template") ||
+            dom.querySelector(".wp-block-cover__inner-container");
     }
 
     // find the node(s) holding the story content
@@ -65,7 +68,8 @@ class WordpressBaseParser extends Parser {
             dom.querySelector(".page-title") ||
             dom.querySelector("header.post-title h1") ||
             dom.querySelector(".post-title") ||
-            dom.querySelector("#chapter-heading");
+            dom.querySelector("#chapter-heading") ||
+            dom.querySelector(".wp-block-post-title");
     }
 
     findChapterTitle(dom) {

@@ -2,7 +2,7 @@
 
 parserFactory.register("flying-lines.com", () => new FlyingLinesParser());
 
-class FlyingLinesParser extends Parser{
+class FlyingLinesParser extends Parser {
     constructor() {
         super();
     }
@@ -10,24 +10,24 @@ class FlyingLinesParser extends Parser{
     getChapterUrls(dom) {
         let menu = dom.querySelector("div.chapter-container");
         return Promise.resolve(util.hyperlinksToChapterList(menu));
-    };
+    }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
-    };
+        return Parser.findConstructedContent(dom);
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("div.title h2");
-    };
+    }
 
     extractAuthor(dom) {
         let authorLabel = dom.querySelector("ul.profile li");
         if (authorLabel === null) {
-            return super.extractAuthor(dom)
+            return super.extractAuthor(dom);
         }
-        util.removeChildElementsMatchingCss(authorLabel, "span");
+        util.removeChildElementsMatchingSelector(authorLabel, "span");
         return authorLabel.textContent;
-    };
+    }
 
     findCoverImageUrl(dom) {
         return util.getFirstImgSrc(dom, "div.novel-thumb");
@@ -35,10 +35,10 @@ class FlyingLinesParser extends Parser{
 
     // this is basically identical to NovelSpread
     fetchChapter(url) {
-        return HttpClient.wrapFetch(url).then(function (xhr) {
+        return HttpClient.wrapFetch(url).then(function(xhr) {
             let restUrl = FlyingLinesParser.extractRestUrl(xhr.responseXML);
             return HttpClient.fetchJson(restUrl);
-        }).then(function (handler) {
+        }).then(function(handler) {
             return FlyingLinesParser.buildChapter(handler.json.data);
         });
     }
@@ -55,8 +55,8 @@ class FlyingLinesParser extends Parser{
         let title = newDoc.dom.createElement("h1");
         title.textContent = `${json.chapter_number}. ${json.chapter_title}`;
         newDoc.content.appendChild(title);
-        let content = new DOMParser().parseFromString(json.chapter_content, "text/html");
-        for(let n of [...content.body.childNodes]) {
+        let content = util.sanitize(json.chapter_content);
+        for (let n of [...content.body.childNodes]) {
             if (n.className !== "siteCopyrightInfo") {
                 newDoc.content.appendChild(n);
             }

@@ -2,7 +2,7 @@
 
 parserFactory.register("fimfiction.net", () => new FimfictionParser());
 
-class FimfictionParser extends Parser{
+class FimfictionParser extends Parser {
     constructor() {
         super();
     }
@@ -26,7 +26,7 @@ class FimfictionParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "h1.chapter-title div[style='float:right']");
+        util.removeChildElementsMatchingSelector(element, "h1.chapter-title div[style='float:right']");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

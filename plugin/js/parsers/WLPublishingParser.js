@@ -10,10 +10,10 @@ parserFactory.register("storiesonline.net", () => new WLPublishingParser());
 
 parserFactory.registerManualSelect(
     "WLPublishing",
-    function() { return new WLPublishingParser() }
+    () => new WLPublishingParser()
 );
 
-class WLPublishingParser extends Parser{
+class WLPublishingParser extends Parser {
     constructor() {
         super();
     }
@@ -24,21 +24,21 @@ class WLPublishingParser extends Parser{
             let baseUrl = this.getBaseUrl(dom);
             return this.singleChapterStory(baseUrl, dom);
         }
-        for(let link of index.querySelectorAll("a")) {
+        for (let link of index.querySelectorAll("a")) {
             if (link.hasAttribute("title") && (link.getAttribute("title") === "download")) {
                 link.remove();
             }
         }
         return util.hyperlinksToChapterList(index);
-    };
+    }
 
     findContent(dom) {
         return dom.querySelector("article");
-    };
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("h1");
-    };
+    }
 
     extractAuthor(dom) {
         let title = dom.querySelector("title").textContent;
@@ -46,19 +46,19 @@ class WLPublishingParser extends Parser{
             return title.substring(0, title.indexOf(":"));
         }
         return super.extractAuthor(dom);
-    };
+    }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div.date");
-        util.removeChildElementsMatchingCss(element, "span.conTag");
-        util.removeChildElementsMatchingCss(element, "span.curr");
-        util.removeChildElementsMatchingCss(element, "div.pager");
-        util.removeChildElementsMatchingCss(element, "div.end-note");
-        util.removeChildElementsMatchingCss(element, "div.vform");
-        util.removeChildElementsMatchingCss(element, "div.sale-link");
-        util.removeChildElementsMatchingCss(element, "div.reco");
-        util.removeChildElementsMatchingCss(element, ".end");
-        util.removeChildElementsMatchingCss(element, "h4.c");
+        util.removeChildElementsMatchingSelector(element, "div.date");
+        util.removeChildElementsMatchingSelector(element, "span.conTag");
+        util.removeChildElementsMatchingSelector(element, "span.curr");
+        util.removeChildElementsMatchingSelector(element, "div.pager");
+        util.removeChildElementsMatchingSelector(element, "div.end-note");
+        util.removeChildElementsMatchingSelector(element, "div.vform");
+        util.removeChildElementsMatchingSelector(element, "div.sale-link");
+        util.removeChildElementsMatchingSelector(element, "div.reco");
+        util.removeChildElementsMatchingSelector(element, ".end");
+        util.removeChildElementsMatchingSelector(element, "h4.c");
         util.removeMicrosoftWordCrapElements(element);
         util.removeScriptableElements(element);
         util.removeComments(element);
@@ -89,7 +89,7 @@ class WLPublishingParser extends Parser{
         let urls = [];
         let pager = dom.querySelector("div.pager");
         if (pager) {
-            for(let link of pager.querySelectorAll("a")) {
+            for (let link of pager.querySelectorAll("a")) {
                 if (link.textContent != "Next") {
                     urls.push(link.href);
                 }
@@ -105,7 +105,7 @@ class WLPublishingParser extends Parser{
             let child = pageContent.childNodes[0];
             // The chapter title appears on each page in the chapter and we only want it from the first.
             if ((child.tagName == "H1") || (child.tagName == "H2")) {
-                child.remove()
+                child.remove();
             } else {
                 chapterContent.appendChild(child);
             }

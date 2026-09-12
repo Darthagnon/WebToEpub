@@ -3,19 +3,19 @@
 //dead url/ parser
 parserFactory.register("indomtl.com", () => new IndomtlParser());
 
-class IndomtlParser extends Parser{
+class IndomtlParser extends Parser {
     constructor() {
         super();
     }
 
     async getChapterUrls(dom) {
-        let links = [...dom.querySelectorAll("div#panelchapterlist div[role='list'] a")]
+        let links = [...dom.querySelectorAll("div#panelchapterlist div[role='list'] a")];
         return links.map(IndomtlParser.linkToChapter).reverse();
     }
 
     static linkToChapter(link) {
-        util.removeChildElementsMatchingCss(link, "span.time");
-        return util.hyperLinkToChapter(link)
+        util.removeChildElementsMatchingSelector(link, "span.time");
+        return util.hyperLinkToChapter(link);
     }
 
     findContent(dom) {
@@ -27,7 +27,7 @@ class IndomtlParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "amp-ad, p.china, .pub-date, .chapter-nav, .snpconainer, .overlay");
+        util.removeChildElementsMatchingSelector(element, "amp-ad, p.china, .pub-date, .chapter-nav, .snpconainer, .overlay");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

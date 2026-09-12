@@ -3,12 +3,12 @@
 */
 "use strict";
 
-parserFactory.register("readlightnovel.me", function() { return new ReadLightNovelParser() });
-parserFactory.register("readlightnovel.meme", function() { return new ReadLightNovelParser() });
+parserFactory.register("readlightnovel.me", () => new ReadLightNovelParser());
+parserFactory.register("readlightnovel.meme", () => new ReadLightNovelParser());
 //dead url
-parserFactory.register("readlightnovel.org", function() { return new ReadLightNovelParser() });
+parserFactory.register("readlightnovel.org", () => new ReadLightNovelParser());
 //dead url
-parserFactory.register("readlightnovel.today", function() { return new ReadLightNovelParser() });
+parserFactory.register("readlightnovel.today", () => new ReadLightNovelParser());
 
 class ReadLightNovelParser extends Parser {
     constructor() {
@@ -16,14 +16,13 @@ class ReadLightNovelParser extends Parser {
     }
 
     getChapterUrls(dom) {
-        let that = this;
         let chaptersDiv = dom.querySelector("div.chapters");
-        let chapters = util.hyperlinksToChapterList(chaptersDiv, that.isChapterHref, that.getChapterArc);
+        let chapters = util.hyperlinksToChapterList(chaptersDiv, this.isChapterHref, this.getChapterArc);
         if (0 < chapters.length) {
             return Promise.resolve(chapters);
         }
         else {
-            return Promise.reject(new Error(chrome.i18n.getMessage("noChaptersFound")));
+            return Promise.reject(new Error(UIText.Error.noChaptersFound));
         }
     }
 
@@ -41,8 +40,8 @@ class ReadLightNovelParser extends Parser {
                 panelDiv = parent;
             } else {
                 parent = parent.parentNode;
-            };
-        };
+            }
+        }
 
         // get the title
         if (panelDiv !== null) {
@@ -59,15 +58,14 @@ class ReadLightNovelParser extends Parser {
     }
 
     extractAuthor(dom) {
-        let that = this;
         let div = util.getElement(dom, "div", d => (d.className === "novel-detail-item") &&
-            (that.novelDetailHeaderName(d) === "Author(s)"));
+            (this.novelDetailHeaderName(d) === "Author(s)"));
         if (div !== null) {
             let li = div.querySelector("li");
             if (li != null) {
                 return li.innerText;
-            };
-        };
+            }
+        }
         return super.extractAuthor(dom);
     }
 
@@ -95,14 +93,14 @@ class ReadLightNovelParser extends Parser {
     removeUnwantedElementsFromContentElement(element) {
         let firstBr = element.querySelector("br:first-of-type");
         let ch = firstBr.nextSibling;
-        if(ch && ch.data.includes("Chapter")) {
+        if (ch && ch.data.includes("Chapter")) {
             let secondBr = ch.nextSibling;
-            if(secondBr && secondBr.tagName == "BR") {
+            if (secondBr && secondBr.tagName == "BR") {
                 util.removeElements([firstBr, ch, secondBr]);
             }
         }
 
-        for(let a of element.querySelectorAll(".adsbyvli")) {
+        for (let a of element.querySelectorAll(".adsbyvli")) {
             let toDelete = [];
             let center = a.parentNode;
             let temp =  this.addPreviousSiblingIfMatches(center, "BR", toDelete);
@@ -111,13 +109,13 @@ class ReadLightNovelParser extends Parser {
             temp = this.addNextSiblingIfMatches(temp, "BR", toDelete);
             this.addNextSiblingIfMatches(temp, "HR", toDelete);
 
-            if(center.tagName == "CENTER") {
+            if (center.tagName == "CENTER") {
                 center.remove();
             }
             util.removeElements(toDelete);
         }
 
-        for(let small of element.querySelectorAll(".ads-title")) {
+        for (let small of element.querySelectorAll(".ads-title")) {
             let toDelete = [];
             this.addPreviousSiblingIfMatches(small, "BR", toDelete);
             let temp = this.addNextSiblingIfMatches(small, "BR", toDelete);
@@ -128,7 +126,7 @@ class ReadLightNovelParser extends Parser {
             util.removeElements(toDelete);
         }
 
-        for(let s of element.querySelectorAll("center > script")) {
+        for (let s of element.querySelectorAll("center > script")) {
             let toDelete = [];
             let center = s.parentNode;
             this.addNextSiblingIfMatches(center, "HR", toDelete);
@@ -138,7 +136,7 @@ class ReadLightNovelParser extends Parser {
         }
 
         super.removeUnwantedElementsFromContentElement(element);
-        util.removeChildElementsMatchingCss(element, "div.row, " +
+        util.removeChildElementsMatchingSelector(element, "div.row, " +
             ".alert, img[src*='/magnify-clip.png'], div.hidden, p.hid");
         this.removeShareThisLinks(element);
     }
@@ -157,7 +155,7 @@ class ReadLightNovelParser extends Parser {
         }
         let sibling = op(element);
 
-        if(!sibling && (element.parentNode !== null)) {
+        if (!sibling && (element.parentNode !== null)) {
             sibling = op(element.parentNode);
         }
 
@@ -174,7 +172,7 @@ class ReadLightNovelParser extends Parser {
     removeShareThisLinks(element) {
         let shareLinks = element.querySelectorAll("span.st_facebook, " +
             "span.st_twitter, span.st_googleplus");
-        for(let share of shareLinks) {
+        for (let share of shareLinks) {
             let parent = share.parentNode;
             if (parent.tagName.toLowerCase() === "p") {
                 parent.remove();

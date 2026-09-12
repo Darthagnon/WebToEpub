@@ -2,7 +2,7 @@
 
 parserFactory.register("asianfanfics.com", () => new AsianfanficsParser());
 
-class AsianfanficsParser extends Parser{
+class AsianfanficsParser extends Parser {
     constructor() {
         super();
     }
@@ -50,7 +50,7 @@ class AsianfanficsParser extends Parser{
 
     addJsonToContent(json, dom) {
         let content = this.findContent(dom);
-        let post = new DOMParser().parseFromString("<div>" + json.post + "</div>", "text/html")
+        let post = util.sanitize("<div>" + json.post + "</div>")
             .querySelector("div");
         content.append(post);
     }

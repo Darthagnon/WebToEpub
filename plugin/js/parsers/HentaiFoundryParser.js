@@ -2,7 +2,7 @@
 
 parserFactory.register("hentai-foundry.com", () => new HentaiFoundryParser());
 
-class HentaiFoundryParser extends Parser{
+class HentaiFoundryParser extends Parser {
     constructor() {
         super();
     }
@@ -50,11 +50,10 @@ class HentaiFoundryParser extends Parser{
     }
 
     getInformationEpubItemChildNodes(dom) {
-        return [...dom.querySelectorAll("td.storyDescript")];
-    }
-
-    cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "div");
-        return node;
+        let desc = dom.querySelector("td.storyDescript");
+        util.removeChildElementsMatchingSelector(desc, "div");
+        let info = dom.createElement("table");
+        info.appendChild(desc.cloneNode(true));
+        return [info];
     }
 }

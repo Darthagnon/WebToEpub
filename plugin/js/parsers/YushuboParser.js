@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("yushubo.net", () => new YushuboParser());
 
-class YushuboParser extends Parser{
+class YushuboParser extends Parser {
     constructor() {
         super();
     }
@@ -16,7 +16,7 @@ class YushuboParser extends Parser{
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
+        return Parser.findConstructedContent(dom);
     }
 
     extractTitleImpl(dom) {
@@ -61,7 +61,7 @@ class YushuboParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "ul.lastchapter");
+        util.removeChildElementsMatchingSelector(node, "ul.lastchapter");
         return node;
     }
 }

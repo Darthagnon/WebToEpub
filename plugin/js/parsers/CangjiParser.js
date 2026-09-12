@@ -2,7 +2,7 @@
 
 parserFactory.register("cangji.net", () => new CangjiParser());
 
-class CangjiParser extends Parser{
+class CangjiParser extends Parser {
     constructor() {
         super();
     }
@@ -21,7 +21,7 @@ class CangjiParser extends Parser{
     }
 
     static nextTocPageUrl(dom) {
-        let link = dom.querySelector("a.next")
+        let link = dom.querySelector("a.next");
         return link === null ? null : link.href;
     }
 
@@ -34,7 +34,7 @@ class CangjiParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".post-tags, .wp-block-ugb-container");
+        util.removeChildElementsMatchingSelector(element, ".post-tags, .wp-block-ugb-container");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

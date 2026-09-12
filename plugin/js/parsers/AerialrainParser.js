@@ -2,18 +2,18 @@
 
 parserFactory.register("aerialrain.com", () => new AerialrainParser());
 
-class AerialrainParser extends WordpressBaseParser{
+class AerialrainParser extends WordpressBaseParser {
     constructor() {
         super();
     }
 
     async getChapterUrls(dom) {
-        return [...dom.querySelectorAll("div.arconix-toggle-content a")]
-            .map(a => util.hyperLinkToChapter(a));
+        return [...dom.querySelectorAll("ul.frame-links-list a")]
+            .map(a => util.hyperLinkToChapter(a)).reverse();
     }
 
     findCoverImageUrl(dom) {
-        return util.getFirstImgSrc(dom, "div.blog-detail-description");
+        return util.getFirstImgSrc(dom, "div.entry-content");
     }
 
     getInformationEpubItemChildNodes(dom) {

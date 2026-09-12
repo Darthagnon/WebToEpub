@@ -1,6 +1,6 @@
 "use strict";
 
-parserFactory.register("gravitytales.com", function() { return new GravityTalesParser() });
+parserFactory.register("gravitytales.com", () => new GravityTalesParser());
 
 class GravityTalesParser extends Parser {
     constructor() {
@@ -47,12 +47,14 @@ class GravityTalesParser extends Parser {
     // find the node(s) holding the story content
     findContent(dom) {
         return dom.querySelector("div.entry-content")
-            || dom.querySelector("div.content");
+            || dom.querySelector("div.content")
+            || dom.querySelector("section#chapter-content");
     }
 
     findChapterTitle(dom) {
         return dom.querySelector("h1.entry-title") ||
-            dom.querySelector("#single h1");
+            dom.querySelector("#single h1") ||
+            dom.querySelector("h1.chapter__title");
     }
 
     findParentNodeOfChapterLinkToRemoveAt(link) {
@@ -87,11 +89,11 @@ class GravityTalesParser extends Parser {
 
     static fetchUrlsOfChapters(novelId, baseUri, fetchJson) {
         let chapterGroupsUrl = `https://gravitytales.com/api/novels/chaptergroups/${novelId}`;
-        return fetchJson(chapterGroupsUrl).then(function (handler) {
+        return fetchJson(chapterGroupsUrl).then(function(handler) {
             return Promise.all(
                 handler.json.map(group => GravityTalesParser.fetchChapterListForGroup(novelId, group, fetchJson))
             );
-        }).then(function (chapterLists) {
+        }).then(function(chapterLists) {
             return GravityTalesParser.mergeChapterLists(chapterLists, baseUri);
         });
     } 
@@ -99,7 +101,7 @@ class GravityTalesParser extends Parser {
     static fetchChapterListForGroup(novelId, chapterGroup, fetchJson) {
         let groupId = chapterGroup.ChapterGroupId;
         let chaptersUrl = `https://gravitytales.com/api/novels/chaptergroup/${groupId}`;
-        return fetchJson(chaptersUrl).then(function (handler) {
+        return fetchJson(chaptersUrl).then(function(handler) {
             return {
                 groupTitle: chapterGroup.Title,
                 chapters: handler.json
@@ -111,7 +113,7 @@ class GravityTalesParser extends Parser {
         let uniqueChapters = new Set();
         return chapterLists.reduce(function(chapters, chapterList) {
             let groupTitle = chapterList.groupTitle;
-            for(let c of chapterList.chapters) {
+            for (let c of chapterList.chapters) {
                 let url = util.removeTrailingSlash(baseUri + "/" + c.Slug);
                 if (!uniqueChapters.has(url)) {
                     uniqueChapters.add(url);
@@ -119,9 +121,9 @@ class GravityTalesParser extends Parser {
                     // only first chapter in each group gets the arc name
                     if (groupTitle != null) {
                         groupTitle = null; 
-                    };
-                };
-            };
+                    }
+                }
+            }
             return chapters;
         }, []);
     }
@@ -135,7 +137,7 @@ class GravityTalesParser extends Parser {
     }
 
     static searchForNovelIdinScriptTags(dom) {
-        for(let e of dom.querySelectorAll("script")) {
+        for (let e of dom.querySelectorAll("script")) {
             let novelId = GravityTalesParser.searchForNovelIdinString(e.innerText);
             if ( novelId !== null) {
                 return novelId;
@@ -178,10 +180,11 @@ class GravityTalesParser extends Parser {
                 }
             }
         }
-        return null;
+
+        return util.getFirstImgSrc(dom, "figure.story__thumbnail");
     }
 
     getInformationEpubItemChildNodes(dom) {
-        return [dom.querySelector("div.desc, p.description")];
+        return [dom.querySelector("div.desc, p.description, .story__summary")];
     }
 }

@@ -2,7 +2,7 @@
 
 parserFactory.register("chaleuria.com", () => new ChaleuriaParser());
 
-class ChaleuriaParser extends WordpressBaseParser{
+class ChaleuriaParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -44,6 +44,6 @@ class ChaleuriaParser extends WordpressBaseParser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "img");
+        util.removeChildElementsMatchingSelector(node, "img");
     }
 }

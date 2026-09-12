@@ -2,7 +2,7 @@
 
 parserFactory.register("bookswithqianya.com", () => new BookswithqianyaParser());
 
-class BookswithqianyaParser extends WordpressBaseParser{
+class BookswithqianyaParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -24,7 +24,7 @@ class BookswithqianyaParser extends WordpressBaseParser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "button");
+        util.removeChildElementsMatchingSelector(element, "button");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

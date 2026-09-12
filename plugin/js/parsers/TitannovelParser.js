@@ -2,7 +2,7 @@
 
 parserFactory.register("titannovel.net", () => new TitannovelParser());
 
-class TitannovelParser extends Parser{
+class TitannovelParser extends Parser {
     constructor() {
         super();
     }
@@ -26,7 +26,7 @@ class TitannovelParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".jp-relatedposts");
+        util.removeChildElementsMatchingSelector(element, ".jp-relatedposts");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

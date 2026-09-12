@@ -1,30 +1,19 @@
 "use strict";
 
 parserFactory.register("fictionzone.net", () => new MtlarchiveParser());
-parserFactory.register("mtlarchive.com", () => new MtlarchiveParser());
-parserFactory.register("reader-hub.com", () => new MtlarchiveParser());
 
-class MtlarchiveParser extends Parser{
+// mtlarchive.com and reader-hub.com were previous names of site
+
+class MtlarchiveParser extends Parser {
     constructor() {
         super();
         this.minimumThrottle = 3000;
     }
 
-    async getChapterUrls(dom, chapterUrlsUI) {
-        let chapters = [...dom.querySelectorAll("div.chapters .list-wrapper a")]
-            .map(a => this.toChapter(a));
-
-        chapterUrlsUI.showTocProgress(chapters);
-        let storyId = await this.findStoryId(dom.baseURI);
-        if (0 < storyId) {
-            let numTocPages = this.findNumTocPages(dom);
-            for(let page = 2; page <= numTocPages; ++page) {
-                let partialList = await this.fetchTocData(storyId, page, dom.baseURI);
-                chapterUrlsUI.showTocProgress(partialList);
-                chapters = chapters.concat(partialList);
-            }
-        }
-        return chapters;
+    async getChapterUrls(dom) {
+        let storyId = await this.fetchStoryId(dom.baseURI);
+        let json = await this.fetchChaptersJson(storyId);
+        return this.jsonToChapterList(json, storyId);
     }
 
     toChapter(link) {
@@ -34,10 +23,32 @@ class MtlarchiveParser extends Parser{
         });
     }
 
-    async findStoryId(url) {
-        let baseurl = new URL(url);
-        let payload = `{"path": "${baseurl.pathname}",` +
-            "\"headers\": {\"content-type\":\"application/json\"}, \"method\": \"get\" }";
+    async fetchStoryId(url) {
+        let path = "/platform/novel-details?slug=" + this.extractSlug(url);
+        let json = await this.fetchJsonFromSite(path);
+        return json?.data?.id || null;
+    }
+
+    async fetchChaptersJson(storyId) {
+        let path = "/platform/chapter-lists?novel_id=" + storyId;
+        let json = await this.fetchJsonFromSite(path);
+        return json?.data?.chapters ?? [];
+    }
+
+    jsonToChapterList(json, storyId) {
+        return json.map(c => ({
+            title: c.title,
+            sourceUrl: `https://fictionzone.net/platform/chapter-content?novel_id=${storyId}&chapter_id=${c.chapter_id}&&highlight=true`
+        }));
+    }
+
+    extractSlug(url) {
+        return url.split("/").pop();
+    }
+
+    async fetchJsonFromSite(path) {
+        let payload = `{"path": "${path}",` +
+            "\"method\": \"get\" }";
         let options = {
             method: "POST",
             headers: {
@@ -47,72 +58,43 @@ class MtlarchiveParser extends Parser{
             credentials: "include",
             body: payload
         };
-        let json = (await HttpClient.fetchJson(baseurl.origin + "/api/__api_party/api-v1", options)).json;
-        return json._data.id;
-        /* old logic
-        
-        let json = JSON.parse(dom.querySelector("script#__NUXT_DATA__").textContent);
-        // exact position of story ID moves, but it's before string with cover image's URL slug
-        for(let index = 15; index <= 30; ++index) {
-            let examine = json[index];
-            if ((typeof examine === "string") && examine.startsWith("novel_covers/")) {
-                return json[index - 1];
-            }
-        }
-        return 0;  
-        */
+        let json = (await HttpClient.fetchJson("https://fictionzone.net/api/__api_party/fictionzone", options)).json;
+        return json;
     }
-
-    findNumTocPages(dom) {
-        let pages = [...dom.querySelectorAll(".pagination span")]
-            .map(s => parseInt(s.textContent) || 0);
-        return (0 < pages.length)
-            ? Math.max(...pages)
-            : 0;
-    }
-
-    async fetchTocData(storyId, page, url) {
-        let baseurl = new URL(url);
-        let payload = `{"path": "/chapter/all/${storyId}", "query": {"page":${page}},` +
-            "\"headers\": {\"content-type\":\"application/json\"}, \"method\": \"get\" }";
-        let options = {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: payload
-        };
-        let json = (await HttpClient.fetchJson(baseurl.origin + "/api/__api_party/api-v1", options)).json;
-        return json._data.map(j => this.jsonToChapter(j, url));
-    }
-
-    jsonToChapter(json, url) {
-        return ({
-            sourceUrl: url + "/" + json.slug,
-            title: json.title
-        });   
-    }    
 
     findContent(dom) {
-        return dom.querySelector(".chapter-wrap");
+        return Parser.findConstructedContent(dom);
     }
 
     extractTitleImpl(dom) {
-        return dom.querySelector("h1");
+        return dom.querySelector("h1.novel-title");
     }
 
     extractAuthor(dom) {
-        let authorLabel = dom.querySelector(".novel-author .content");
+        let authorLabel = dom.querySelector(".metadata-value");
         return authorLabel?.textContent ?? super.extractAuthor(dom);
     }
 
+    async fetchChapter(url) {
+        let path = url.replace("https://fictionzone.net", "");
+        let json = await this.fetchJsonFromSite(path);
+        return this.buildChapter(json.data, url);
+    }
+
+    buildChapter(json, url) {
+        let newDoc = Parser.makeEmptyDocForContent(url);
+        let title = newDoc.dom.createElement("h1");
+        title.textContent = json.title;
+        newDoc.content.appendChild(title);
+        Parser.addTextToChapterContent(newDoc, json.content);
+        return newDoc.dom;
+    }
+
     findCoverImageUrl(dom) {
-        return util.getFirstImgSrc(dom, "div.novel-img");
+        return util.getFirstImgSrc(dom, ".cover-image-wrapper");
     }
 
     getInformationEpubItemChildNodes(dom) {
-        return [...dom.querySelectorAll("#synopsis .content")];
+        return [...dom.querySelectorAll(".synopsis-text")];
     }
 }

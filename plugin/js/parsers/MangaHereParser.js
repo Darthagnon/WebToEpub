@@ -3,7 +3,7 @@
 */
 "use strict";
 
-parserFactory.register("www.mangahere.cc", function() { return new MangaHereParser() });
+parserFactory.register("www.mangahere.cc", () => new MangaHereParser());
 
 class MangaHereParser extends Parser {
     constructor() {
@@ -17,16 +17,16 @@ class MangaHereParser extends Parser {
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
+        return Parser.findConstructedContent(dom);
     }
 
     convertSelectToImgTagsToFollow(dom, content, select) {
         let options = Array.from(select.querySelectorAll("option"));
-        for(let option of options.filter(o => !o.value.includes("featured"))) {
+        for (let option of options.filter(o => !o.value.includes("featured"))) {
             let img = dom.createElement("img");
             img.src = option.value;
             content.appendChild(img);
-        };
+        }
         
         // first image in list is current page, so replace with image URL 
         // to skip fetching this page again
@@ -91,13 +91,13 @@ class MangaHereParser extends Parser {
             .filter(MangaHereParser.isWantedScriptElement)
             .map(s => s.innerHTML);
 
-        let chapterId = util.extactSubstring(script[0], MangaHereParser.chatperIdPrefix, ";");
-        let imageCount = parseInt(util.extactSubstring(script[0], /var\s*imagecount\s*=\s*/, ";"));
+        let chapterId = util.extractSubstring(script[0], MangaHereParser.chatperIdPrefix, ";");
+        let imageCount = parseInt(util.extractSubstring(script[0], /var\s*imagecount\s*=\s*/, ";"));
 
         let index = url.lastIndexOf("/");
         let root = url.substring(0, index + 1);
         let urls = [];
-        for(let i = 1; i <= imageCount; ++i) {
+        for (let i = 1; i <= imageCount; ++i) {
             urls.push(`${root}chapterfun.ashx?cid=${chapterId}&page=${i}`);
         }
         return urls;
@@ -119,7 +119,7 @@ class MangaHereParser extends Parser {
     }
 
     static addImgsToNewDoc(newDoc, urls, imgUrls) {
-        for(let u of urls) {
+        for (let u of urls) {
             if (!imgUrls.has(u)) {
                 imgUrls.add(u);
                 let img = newDoc.dom.createElement("img");
@@ -136,26 +136,26 @@ class MangaHereParser extends Parser {
     }
 
     static extractDataFromjs(js) {
-        let text = util.extactSubstring(js, "return p;}('" , ".split(");
+        let text = util.extractSubstring(js, "return p;}('" , ".split(");
         text = text.replace(/"/g, "\\\"").replace(/'/g, "\"");
         return JSON.parse("[\"" + text + "]");
     }
 
     static extractFilenameFromClearText(clearText, prefix) {
         if (prefix === undefined) {
-            prefix = util.extactSubstring(clearText, "\"", "\"");
+            prefix = util.extractSubstring(clearText, "\"", "\"");
         }
         if (!clearText.includes("[") || !clearText.includes("]")) {
             return [];
         }
-        let urls = util.extactSubstring(clearText, "[", "]").split(",");
+        let urls = util.extractSubstring(clearText, "[", "]").split(",");
         return urls.map(u => "http:" + prefix + u.replace(/"/g, ""));
     }
 
     // extracted from MangaHere (and deobfuscated)
     static decrypt(p, max, len, fragments) {
-        let makeKey = function (index) {
-            return (index < max ? "" : makeKey(parseInt(index / max))) + ((index = index % max) > 35 ? String.fromCharCode(index + 29) : index.toString(36))
+        let makeKey = function(index) {
+            return (index < max ? "" : makeKey(parseInt(index / max))) + ((index = index % max) > 35 ? String.fromCharCode(index + 29) : index.toString(36));
         };
         let replacements = {};
         while (len--)

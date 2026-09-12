@@ -6,7 +6,6 @@ module("BakaTsuki");
 /// Load the sample file
 /// As file operation is async, load the sample file into dom, and call doneCallback when file loaded
 function syncLoadBakaTsukiSampleDoc() {
-    let that = this;
     let xhr = new XMLHttpRequest();
     xhr.open("GET", "../testdata/Baka-Tsuki.html", false);
     xhr.send(null);
@@ -248,12 +247,14 @@ QUnit.test("replaceImageTags", function (assert) {
     imageInfo = imageCollector.imageInfoByUrl("https://www.baka-tsuki.org/project/index.php?title=File:BTS_vol_01_000b.png");
     imageInfo.height = 600;
     imageInfo.width = 400;
+    imageInfo.mediaType = "image/png";
     imageInfo = imageCollector.imageInfoByUrl("https://www.baka-tsuki.org/project/index.php?title=File:BTS_V01_Cover.jpg");
     imageInfo.height = 10;
     imageInfo.width = 20;
     imageInfo = imageCollector.imageInfoByUrl("https://www.baka-tsuki.org/project/index.php?title=File:star_on.gif");
     imageInfo.height = 1;
     imageInfo.width = 2;
+    imageInfo.mediaType = "image/gif";
     let parser = new BakaTsukiParser(imageCollector);
     parser.replaceImageTags(dom.documentElement);
 

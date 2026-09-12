@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("novelcrush.com", () => new NovelCrushParser());
 
-class NovelCrushParser extends Parser{
+class NovelCrushParser extends Parser {
     constructor() {
         super();
     }
@@ -35,7 +35,7 @@ class NovelCrushParser extends Parser{
     }
 
     preprocessRawDom(chapterDom) {
-        util.removeChildElementsMatchingCss(chapterDom, "ins[data-ad-format]");
+        util.removeChildElementsMatchingSelector(chapterDom, "ins[data-ad-format]");
     }
 
     getInformationEpubItemChildNodes(dom) {
@@ -43,7 +43,7 @@ class NovelCrushParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "div.heateor_sss_sharing_container");
+        util.removeChildElementsMatchingSelector(node, "div.heateor_sss_sharing_container");
         return node;
     }
 }

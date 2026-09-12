@@ -1,8 +1,8 @@
 "use strict";
 
-parserFactory.register("mtnovel.net", () => new MtnovelParser());
+parserFactory.registerDeadSite("mtnovel.net", () => new MtnovelParser());
 
-class MtnovelParser extends Parser{
+class MtnovelParser extends Parser {
     constructor() {
         super();
     }
@@ -13,7 +13,7 @@ class MtnovelParser extends Parser{
             MtnovelParser.getUrlsOfTocPages,
             chapterUrlsUI
         )).reverse();
-    };
+    }
 
     static getUrlsOfTocPages(dom) {
         let lastUrl = dom.querySelector("#pagelink a.last").href;
@@ -43,7 +43,7 @@ class MtnovelParser extends Parser{
     removeUnwantedElementsFromContentElement(element) {
         let links = [...element.querySelectorAll("a")]
             .filter(link => link.textContent.includes("Back to top"));
-        for(let link of links) {
+        for (let link of links) {
             link.replaceWith(link.ownerDocument.createElement("br"));
         }
         super.removeUnwantedElementsFromContentElement(element);
@@ -82,6 +82,6 @@ class MtnovelParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "img");
+        util.removeChildElementsMatchingSelector(node, "img");
     }
 }

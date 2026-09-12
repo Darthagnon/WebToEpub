@@ -2,7 +2,7 @@
 
 parserFactory.register("indowebnovel.id", () => new IndowebnovelParser());
 
-class IndowebnovelParser extends Parser{
+class IndowebnovelParser extends Parser {
     constructor() {
         super();
     }
@@ -46,6 +46,6 @@ class IndowebnovelParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "script");
+        util.removeChildElementsMatchingSelector(node, "script");
     }
 }

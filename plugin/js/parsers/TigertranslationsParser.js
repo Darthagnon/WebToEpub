@@ -2,7 +2,7 @@
 
 parserFactory.register("tigertranslations.org", () => new TigertranslationsParser());
 
-class TigertranslationsParser extends Parser{
+class TigertranslationsParser extends Parser {
     constructor() {
         super();
     }
@@ -22,7 +22,7 @@ class TigertranslationsParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "p.taxonomies, "+
+        util.removeChildElementsMatchingSelector(element, "p.taxonomies, "+
             ".tiger-after-content, .jp-relatedposts");
         super.removeUnwantedElementsFromContentElement(element);
     }
@@ -68,11 +68,11 @@ class TigertranslationsParser extends Parser{
     }    
 
     isTigerTranslationsHost(link) {
-        return new URL(link.href).host === "tigertranslations.org"        
+        return new URL(link.href).host === "tigertranslations.org";        
     }
 
     cleanInitialDom(element) {
-        util.removeChildElementsMatchingCss(element, "p.taxonomies, "+
+        util.removeChildElementsMatchingSelector(element, "p.taxonomies, "+
             ".tiger-after-content, .jp-relatedposts, .sharedaddy");
     }
 

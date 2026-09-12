@@ -11,6 +11,10 @@
 		"message": "Show Advanced Library Options",
 		"description": "Label for checkbox to Show Advanced Library Options"
 	},
+	"__MSG_label_Lib_Compact_View__": {
+		"message": "Show Library in Compact Layout",
+		"description": "Label for checkbox to Show Advanced Library Options"
+	},
 	"__MSG_label_Lib_Download_Epub_After_Update__": {
 		"message": "Download Epubs after new Chapter got added automatically.",
 		"description": "Label for checkbox to Download Epubs after update"
@@ -35,6 +39,18 @@
 		"message": "Upload Epub",
 		"description": "Label on button to Upload Epub in Library"
 	},
+	"__MSG_button_Lib_Template_Add_List_To_Library__": {
+		"message": "Add novels to Library",
+		"description": "Label on button to Add novels to Library in Library"
+	},
+	"__MSG_button_Lib_Template_Add_List_To_Library_Paused__": {
+		"message": "Add novels to Library paused",
+		"description": "Label on button to Add novels to Library in Library"
+	},
+	"__MSG_button_Lib_Template_Update_All__": {
+		"message": "Update all",
+		"description": "Label on button to Update all Epubs"
+	},
 	"__MSG_button_Lib_Template_Delete_EPUB__": {
 		"message": "Delete EPUB",
 		"description": "Label on button to Delete EPUB"
@@ -42,6 +58,10 @@
 	"__MSG_button_Lib_Template_Search_new_Chapters__": {
 		"message": "Search new Chapters",
 		"description": "Label on button to Search new Chapters"
+	},
+	"__MSG_button_Lib_Template_Update_new_Chapters__": {
+		"message": "Update",
+		"description": "Label on button to Update new Chapters"
 	},
 	"__MSG_button_Lib_Template_Download_EPUB__": {
 		"message": "Download EPUB",
@@ -55,9 +75,17 @@
 		"message": "Edit Metadata",
 		"description": "Label on button to show edit options for metadata"
 	},
+	"__MSG_button_Lib_Template_Open_URL__": {
+		"message": "Open URL",
+		"description": "Label on button to open URL from Library book"
+	},
 	"__MSG_label_Lib_Template_Library_uses__": {
 		"message": "Library uses: ",
 		"description": "Label in front of the Bytes used in local Storage"
+	},
+	"__MSG_label_Lib_Template_New_Chapter__": {
+		"message": " new",
+		"description": "Label of x new chapter"
 	},
 	"__MSG_label_Lib_Template_Story_URL__": {
 		"message": "Story URL",
@@ -119,6 +147,10 @@
 		"message": "Open URL for Captcha",
 		"description": "Label on 'Open URL for Captcha' button when show error HTTP 403"
 	},
+	"__MSG_button_error_Copy_URL__": {
+		"message": "Copy URL for Captcha",
+		"description": "Label on 'Copy URL for Captcha' button when show error HTTP 403"
+	},
 	"__MSG_button_error_Block_URL__": {
 		"message": "Block Website for future requests",
 		"description": "Label on 'Block Website for future requests' button when show error HTTP 403"
@@ -142,6 +174,14 @@
 	"__MSG_button_Pack_EPUB__": {
 		"message": "Pack EPUB",
 		"description": "Label on button to create the EPUB"
+	},
+	"__MSG_button_Add_to_Library__": {
+		"message": "Add to Library",
+		"description": "Label on button to create the EPUB and Add it to the Library"
+	},
+	"__MSG_button_Pause_to_Library__": {
+		"message": "Pause to Library",
+		"description": "Label on button to Pause the download"
 	},
 	"__MSG_button_Reset__": {
 		"message": "Reset",
@@ -175,6 +215,10 @@
 		"message": "Unselect All",
 		"description": "Label on button to unselect all chapters"
 	},
+	"__MSG_button_View_Filters__": {
+		"message": "Filters",
+		"description": "Label on button and header to show available filters"
+	},
 	"__MSG_button_View_Reading_List__": {
 		"message": "View Reading List",
 		"description": "Label on button to show Reading List"
@@ -193,7 +237,7 @@
 	},
 	"__MSG_column_URL__": {
 		"message": "URL",
-		"description": "The 'URL to get chapter frorm' column in the table of chapters."
+		"description": "The 'URL to get chapter from' column in the table of chapters."
 	},
 	"__MSG_label_Add_Information_Page_To_Epub__": {
 		"message": "Add Information page to Epub",
@@ -212,12 +256,32 @@
 		"description": "Label for checkbox to toggle logic that picks parser to use for a web page to include the Baka-Tsuki Series Page Parser"
 	},
 	"__MSG_label_Chapter_Count__": {
-		"message": "Chapters Count:",
+		"message": "Chapter Count:",
 		"description": "Label for number of chapters in range"
 	},
 	"__MSG_label_Chapters_Page_In_Chapters_List__": {
 		"message": "Add Page with Chapters to Chapters List",
 		"description": "Label for checkbox to toggle adding the page with chapters to list of pages to fetch"
+	},
+	"__MSG_label_Compress_Images__": {
+		"message": "Compress Images",
+		"description": "Label for checkbox and value to compress images to a certain size"
+	},
+	"__MSG_label_Compress_Images_Animated__": {
+		"message": "Compress Animated Images to single frame (GIF, APNG, WebP)",
+		"description": "Label for animated compression checkbox"
+	},
+	"__MSG_label_Compress_Images_JPG_Cover__": {
+		"message": "Restrict Cover Image to JPEG",
+		"description": "Label for JPEG cover restriction checkbox"
+	},
+	"__MSG_label_Compress_Images_Format__": {
+		"message": "Compressed Image Format",
+		"description": "Label for mime type of compressed image"
+	},
+	"__MSG_label_Compress_Images_Resolution__": {
+		"message": "Compressed Resolution",
+		"description": "Label for number input for maximum dimension size of pixel height or width in image"
 	},
 	"__MSG_label_Cover_from_URL__": {
 		"message": "Cover from URL:",
@@ -249,7 +313,7 @@
 	},
 	"__MSG_label_Default_Parser_Test_Chapter_Url__": {
 		"message": "URL of first chapter:",
-		"description": "Label in front of input for URL to test deefault parser settings."
+		"description": "Label in front of input for URL to test default parser settings."
 	},
 	"__MSG_label_Default_Parser_Unwanted_Elements_CSS__": {
 		"message": "CSS selector for element(s) to remove:",
@@ -292,16 +356,20 @@
 		"description": "No tags and description in metadata"
 	},
 	"__MSG_label_auto_search_metadata__": {
-		"message": "auto search Metadata on novelupdates or wlnupdates (long loading time)",
-		"description": "auto search Metadata on novelupdates or wlnupdates"
+		"message": "auto search Metadata on novelupdates (long loading time)",
+		"description": "auto search Metadata on novelupdates"
 	},
 	"__MSG_label_less_tags__": {
 		"message": "less tags",
 		"description": "Only extract genre"
 	},
+	"__MSG_label_Show_More_Metadata_Options__": {
+		"message": "Show more Metadata options",
+		"description": "Show more Metadata options to user"
+	},
 	"__MSG_label_Manual_Delay_Per_Chapter__": {
-		"message": "Manual Throttle|Delay per chapter",
-		"description": "Manual Throttle|Delay per chapter"
+		"message": "Delay per chapter in ms",
+		"description": "Delay per chapter in ms"
 	},
 	"__MSG_label_Manually_Select_Parser__": {
 		"message": "Manually Select Parser:",
@@ -319,6 +387,18 @@
 		"message": "Epub description",
 		"description": "Preview description from the epub in Calibre"
 	},
+	"__MSG_label_Metadata_publisher__": {
+		"message": "Publisher",
+		"description": "Label for Epub publisher"
+	},
+	"__MSG_label_Metadata_date_published__": {
+		"message": "Published",
+		"description": "Label for the original publication date"
+	},
+	"__MSG_label_Custom_Filename__": {
+		"message": "Custom Filename",
+		"description": "Custom Filename input"
+	},
 	"__MSG_label_Metadata_subject__": {
 		"message": "Tags",
 		"description": "Tags for epub"
@@ -332,12 +412,12 @@
 		"description": "Additional Metadata URL"
 	},
 	"__MSG_label_Override_Default_Minimum_Delay__": {
-		"message": "Override Minimum Throttle Value (where applicable)",
-		"description": "Override Minimum Throttle Value (where applicable)"
+		"message": "Override Delay per chapter Value (where applicable)",
+		"description": "Override Delay per chapter Value (where applicable)"
 	},
 	"__MSG_label_Overwrite_Epub_When_Filename_Duplicte__": {
 		"message": "Overwrite existing EPUB file with same name",
-		"description": "Label for checkbox to toggle between 'overwrite exisitng Epub files' and 'make names unique'"
+		"description": "Label for checkbox to toggle between 'overwrite existing Epub files' and 'make names unique'"
 	},
 	"__MSG_label_Password__": {
 		"message": "Password",
@@ -359,9 +439,25 @@
 		"message": "Remove Author Notes",
 		"description": "Label for checkbox to remove Author Notes from chapters"
 	},
+	"__MSG_label_Remove_Chapter_Number__": {
+		"message": "Remove Chapter Numbers",
+		"description": "Label for checkbox to remove Chapter Numbers from chapter titles"
+	},
 	"__MSG_label_Remove_Original__": {
 		"message": "Remove Original/Raw Text",
 		"description": "Label for checkbox to remove Original text from chapters"
+	},
+	"__MSG_label_Select_Translation_Google__": {
+		"message": "Download raw (no login)",
+		"description": "Label for radio checkbox Google"
+	},
+	"__MSG_label_Select_Retry_Longer__": {
+		"message": "Retry Chapter for up to 1h (it looks like WebToEpub is stuck)",
+		"description": "Label for Retry longer"
+	},
+	"__MSG_label_Remove_Translated__": {
+		"message": "Remove Translated Text",
+		"description": "Label for checkbox to remove Translated text from chapters"
 	},
 	"__MSG_label_Remove_Duplicate_Images__": {
 		"message": "Remove Duplicate Images:",
@@ -391,6 +487,10 @@
 		"message": "Skip chapters that return HTTP 404 error",
 		"description": "Label in front of checkbox for skipping chapters that can't be fetched"
 	},
+	"__MSG_label_No_Content_To_Error_403_Page__": {
+		"message": "Treat 'no content found error' as 'HTTP 403 error'.",
+		"description": "Label in front of checkbox for treating 'no content found' error as 'HTTP 403 error'"
+	},
 	"__MSG_label_Stylesheet__": {
 		"message": "Stylesheet:",
 		"description": "Label in front of edit field for setting the stylesheet (in Advanced settings)."
@@ -411,9 +511,17 @@
 		"message": "Use full title as file name",
 		"description": "Label in front of checkbox to choose if Epub's filename will be truncated or not."
 	},
+	"__MSG_label_Remove_Illegal_Character_From_Filename_On_Download__": {
+		"message": "Remove illegal characters from filename on download",
+		"description": "Label in front of checkbox to choose if Epub's filename will have it's illegal character removed or not."
+	},
 	"__MSG_label_Use_SVG_for_Images__": {
 		"message": "Use <svg> for images",
 		"description": "Label in front of checkbox to choose between <img> and <svg> elements for images."
+	},
+	"__MSG_label_Remove_Next_and_Previous_Chapter_Hyperlinks__": {
+		"message": "Remove Next and Previous Chapter Hyperlinks",
+		"description": "Remove hyperlinks to the previous and next chapter that may appear in chapter pages."
 	},
 	"__MSG_label_Using_Default_Parser__": {
 		"message": "No parser found for this URL.  Default Parser will be used. Please specify how to obtain content from each web page.",
@@ -427,6 +535,18 @@
 		"message": "Don't popup 'SaveAs' dialog when save Epub",
 		"description": "Label for checkbox to download the final epub without a popup"
 	},
+    "__MSG_label_Disable_Shift_Click_Alert__": {
+      "message": "Disable Shift+Click Selection Alert",
+      "description": "Label for checkbox to disable the alert shown when user shift-clicks to select multiple chapters"
+    },
+    "__MSG_label_Disable_Image_Res_Error__": {
+      "message": "Disable High Resolution Image Fetch Failure Warning",
+      "description": "Label for checkbox to disable warnings when high resolution image fetch fails and lower resolution is used instead"
+    },
+    "__MSG_label_Disable_Webp_Image_Format_Error__": {
+      "message": "Disable WebP Image Format Compatibility Warning",
+      "description": "Label for checkbox to disable warnings that WebP format images may not render in epub viewers"
+    },
 	"__MSG_label_Write_Error_History_To_File__": {
 		"message": "Write error messages to file",
 		"description": "Label for checkbox to write recent error messages to file"
@@ -479,9 +599,29 @@
 		"message": "Searching for URLs.  Please wait.",
 		"description": "Message shown while looking for list of Chapter URLs."
 	},
+	"__MSG_option_value_auto__": {
+		"message": "auto",
+		"description": "Generic option text for 'automatic'"
+	},
 	"__MSG_Shift_Click__": {
 		"message": "You can select or unselect a range of chapters by clicking on the checkbox for the first chapter, then  hold down the shift key and click the last chapter in the range.",
 		"description": "Tell user how to shift-click to multiselect."
+	},
+	"__MSG_Tooltip_chapter_downloading__": {
+		"message": "Downloading chapter",
+		"description": "Tooltip for chapter download status icon: chapter is currently downloading"
+	},
+	"__MSG_Tooltip_chapter_downloaded__": {
+		"message": "Downloaded",
+		"description": "Tooltip for chapter download status icon: chapter download succeeded"
+	},
+	"__MSG_Tooltip_chapter_sleeping__": {
+		"message": "Waiting for chapter delay time to elapse",
+		"description": "Tooltip for chapter download status icon: waiting for chapter delay time to elapse"
+	},
+	"__MSG_Tooltip_chapter_previously_downloaded__": {
+		"message": "Chapter previously downloaded",
+		"description": "Tooltip for chapter download status icon: chapter has been downloaded before."
 	},
 	"chapterPlaceholderMessage": {
 		"message": "This is a placeholder.  Attempt to fetch chapter from '$url$' failed with error: \r\n $error$",
@@ -523,7 +663,7 @@
 		"description": "Default UUID value to use when one is not supplied"
 	},
 	"errorEditMetadata": {
-		"message": "An error occurd during the editing of the Metadata. Couldn't find the string to replace in  OEBPS/content.opf",
+		"message": "An error occurred during the editing of the Metadata. Couldn't find the string to replace in  OEBPS/content.opf",
 		"description": "Error message when regex can't find the string to replace in OEBPS/content.opf"
 	},
 	"errorAddToLibraryLibraryAddPageWithChapters": {
@@ -626,6 +766,10 @@
 		"message": "No images found",
 		"description": "Text put in images table when no images are found."
 	},
+	"errorMobileModeDetected": {
+		"message": "You use WebToEpub in the Mobile view please change the tab to the Desktop version.\nIn Firefox for Android ⋮-> Desktop site -> On\n\nThe website from which you start WebToEpub also needs to be in the Desktop view.",
+		"description": "Warning message when the user is in Mobile mode."
+	},
 	"noParserFound": {
 		"message": "No parser found for this URL.  Default parser will be used.  You will need to specify how to obtain content for each chapter.",
 		"description": "Warning message when can't figure out how to extract info from web page."
@@ -647,7 +791,7 @@
 		"description": "Internal message for developer."
 	},
 	"warning403ErrorResponse": {
-		"message": "WARNING: Site '$host$' has sent an Access Denied (403) error.\nYou may need to logon to site, or browse site normally\nuntil you get a Cloudflare \"Are you a human\" page or satisfy some other CAPTCHA\nbefore WebToEpub can continue.\n",
+		"message": "WARNING: Site '$host$' has sent an Access Denied (403) error.\nYou may need to logon to site, or browse site normally\nuntil you get a Cloudflare \"Are you a human\" page or satisfy some other CAPTCHA\nbefore WebToEpub can continue.\nThis happens if you are downloading too fast, try to increase 'Advanced Options -> Delay per chapter in ms'\n",
 		"description": "Warning message for user when site sends a 403 response.",
 		"placeholders": {
 			"host": {
@@ -660,17 +804,13 @@
 		"description": "Wait message for user when site sends a 403 response."
 	},
 	"warning429ErrorResponse": {
-		"message": "WARNING: Site '$host$' has requested WebToEpub to slow down rate of chapter requests.  WebToEpub will wait until site allows requesting chapters again.  However, if this does not work, you may need to adjust manually.  Under 'Advanced Options' -> lower 'Max web pages to fetch simultaneously' and/or increase 'Manual Throttle|Delay per chapter'",
+		"message": "WARNING: Site '$host$' has requested WebToEpub to slow down rate of chapter requests.  WebToEpub will wait until site allows requesting chapters again.  However, if this does not work, you may need to adjust manually.  Under 'Advanced Options' -> increase 'Delay per chapter in ms'",
 		"description": "Warning message for user when site sends a 429 response.",
 		"placeholders": {
 			"host": {
 				"content": "$1"
 			}
 		}
-	},
-	"warningParserDisabledComradeMao": {
-		"message": "WARNING: Support for comrademao.com has been disabled at the request of site owners, due to WebToEpub causing problems for other users of site.  For more details, see: https://github.com/dteviot/WebToEpub/issues/279",
-		"description": "Warning message when user tries to process comrademao.com."
 	},
 	"warningNoChapterUrl": {
 		"message": "ERROR: No Chapter URL supplied to test against.",

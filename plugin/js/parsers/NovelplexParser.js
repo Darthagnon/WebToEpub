@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("novelplex.org", () => new NovelplexParser());
 
-class NovelplexParser extends Parser{
+class NovelplexParser extends Parser {
     constructor() {
         super();
     }
@@ -29,7 +29,7 @@ class NovelplexParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, ".pt_aBody, .pt_aButton");
+        util.removeChildElementsMatchingSelector(element, ".pt_aBody, .pt_aButton");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

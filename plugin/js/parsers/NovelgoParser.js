@@ -2,7 +2,7 @@
 
 parserFactory.register("novelgo.id", () => new NovelgoParser());
 
-class NovelgoParser extends Parser{
+class NovelgoParser extends Parser {
     constructor() {
         super();
     }
@@ -37,7 +37,7 @@ class NovelgoParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "ins, div.code-block-label, .code-block");
+        util.removeChildElementsMatchingSelector(element, "ins, div.code-block-label, .code-block");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

@@ -1,7 +1,7 @@
 "use strict";
 
 class Download {
-    constructor () {
+    constructor() {
     }
 
     static init() {
@@ -16,16 +16,74 @@ class Download {
     }
 
     static isFileNameIllegalOnWindows(fileName) {
-        for(let c of Download.illegalWindowsFileNameChars) {
+        for (let c of Download.illegalWindowsFileNameChars) {
             if (fileName.includes(c)) {
                 return true;
             }
         }
+        if (fileName.trim() == "") {
+            return true;
+        }
         return false;
+    }
+
+    static CustomFilename() {
+        let CustomFilename = document.getElementById("CustomFilenameInput").value;
+        let ToReplace = {
+            "%URL_hostname%": (new URL(document.getElementById("startingUrlInput").value))?.hostname,
+            "%Title%": document.getElementById("titleInput").value,
+            "%Author%": document.getElementById("authorInput").value,
+            "%Language%": document.getElementById("languageInput").value,
+            "%Chapters_Count%":  document.getElementById("spanChapterCount").innerHTML,
+            "%Chapters_Downloaded%":  document.getElementById("fetchProgress").value-1,
+            "%Filename%": document.getElementById("fileNameInput").value,
+        };
+        for (const [key, value] of Object.entries(ToReplace)) {
+            CustomFilename = CustomFilename.replaceAll(key, value);
+        }
+        CustomFilename = CustomFilename.trim();
+        if (Download.isFileNameIllegalOnWindows(CustomFilename)) {
+            ErrorLog.showErrorMessage(UIText.Error.errorIllegalFileName(CustomFilename, Download.illegalWindowsFileNameChars));
+
+            let userPreferences = main.getUserPreferences();
+            if (userPreferences.removeIllegalCharacterFromFilenameOnDownload.value) {
+                let newCustomFilename = CustomFilename;
+                for (let c of Download.illegalWindowsFileNameChars) {
+                    newCustomFilename = newCustomFilename.replaceAll(c, "");
+                }
+                newCustomFilename = newCustomFilename.trim();
+                if (newCustomFilename == "") {
+                    return EpubPacker.addExtensionIfMissing("IllegalFileName");
+                }
+                return EpubPacker.addExtensionIfMissing(newCustomFilename);
+            }
+
+            return EpubPacker.addExtensionIfMissing("IllegalFileName");
+        }
+        return EpubPacker.addExtensionIfMissing(CustomFilename);
     }
 
     /** write blob to "Downloads" directory */
     static save(blob, fileName, overwriteExisting, backgroundDownload) {
+        if (Download.isFileNameIllegalOnWindows(fileName.replace(".epub", ""))) {
+            ErrorLog.showErrorMessage(UIText.Error.errorIllegalFileName(fileName, Download.illegalWindowsFileNameChars));
+
+            let userPreferences = main.getUserPreferences();
+            if (userPreferences.removeIllegalCharacterFromFilenameOnDownload.value) {
+                let newFileName = fileName;
+                for (let c of Download.illegalWindowsFileNameChars) {
+                    newFileName = newFileName.replaceAll(c, "");
+                }
+                if (newFileName.trim() == "") {
+                    fileName = EpubPacker.addExtensionIfMissing("IllegalFileName");
+                }
+
+                fileName = EpubPacker.addExtensionIfMissing(newFileName);
+            }
+            else {
+                fileName = EpubPacker.addExtensionIfMissing("IllegalFileName");
+            }            
+        }
         let options = {
             url: URL.createObjectURL(blob),
             filename: fileName,
@@ -66,7 +124,7 @@ class Download {
     static saveOnFirefox(options, cleanup) {
         return browser.runtime.getPlatformInfo().then(platformInfo => {
             if (Download.isAndroid(platformInfo)) {
-                Download.saveOnFirefoxForAndroid(options, cleanup)
+                Download.saveOnFirefoxForAndroid(options, cleanup);
             } else {
                 return browser.downloads.download(options).then(
                     // on Firefox, resolves when "Save As" dialog CLOSES, so no

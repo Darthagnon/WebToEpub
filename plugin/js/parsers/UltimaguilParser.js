@@ -4,7 +4,7 @@
 "use strict";
 
 //dead url/ parser
-parserFactory.register("ultimaguil.org", function() { return new UltimaguilParser(new VariableSizeImageCollector()) });
+parserFactory.register("ultimaguil.org", () => new UltimaguilParser(new VariableSizeImageCollector()));
 
 class UltimaguilParser extends Parser {
     constructor(imageCollector) {
@@ -29,17 +29,15 @@ class UltimaguilParser extends Parser {
         return div;
     }
 
-    populateUI(dom) {
-        super.populateUI(dom);
-        document.getElementById("higestResolutionImagesRow").hidden = false; 
+    populateUIImpl() {
+        document.getElementById("highestResolutionImagesRow").hidden = false;
     }
 
     webPageToEpubItems(webPage, epubItemIndex) {
-        let that = this;
-        let content = that.convertRawDomToContent(webPage);
+        let content = this.convertRawDomToContent(webPage);
         let items = [];
         if (content != null) {
-            items = that.splitContentIntoEpubItems(content, webPage.sourceUrl, epubItemIndex);
+            items = this.splitContentIntoEpubItems(content, webPage.sourceUrl, epubItemIndex);
         }
         return items;
     }
@@ -51,14 +49,14 @@ class UltimaguilParser extends Parser {
     }
 
     convertMidpartToHeaders(content) {
-        let document = content.ownerDocument;
-        for(let midpart of content.querySelectorAll("div.part.midpart.gear")) {
+        let doc = content.ownerDocument;
+        for (let midpart of content.querySelectorAll("div.part.midpart.gear")) {
             let parent = midpart.parentElement;
-            let h3 = document.createElement("h2");
+            let h3 = doc.createElement("h2");
             let link = midpart.querySelector("a");
-            h3.appendChild(document.createTextNode(link.getAttribute("title")));
+            h3.appendChild(doc.createTextNode(link.getAttribute("title")));
             parent.replaceWith(h3);
-        };
+        }
     }
 
     customRawDomToContentStep(chapter, content) {
@@ -77,21 +75,21 @@ class UltimaguilParser extends Parser {
                 let node = read_content.childNodes[0];
                 if (node.tagName.toLowerCase() === "div") {
                     let div = node;
-                    while(div.hasChildNodes()) {
+                    while (div.hasChildNodes()) {
                         parent.insertBefore(div.childNodes[0], read_content);
-                    };
+                    }
                     div.remove();
                 } else {
                     parent.insertBefore(node, read_content);
-                };
-            };
-        };
+                }
+            }
+        }
     }
 
     removeLinkFromHeaders(content) {
         let document = content.ownerDocument;
-        for(let link of content.querySelectorAll("h2 a")) {
+        for (let link of content.querySelectorAll("h2 a")) {
             link.replaceWith(document.createTextNode(link.textContent));
-        };
+        }
     }
 }

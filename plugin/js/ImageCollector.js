@@ -6,7 +6,7 @@
 
 /** class that handles image tags 
  * urlIndex - track URLs associated with an ImageInfo
- * bitmapIndex - hashes of the image bitmaps, to allow us to elminate duplicate images
+ * bitmapIndex - hashes of the image bitmaps, to allow us to eliminate duplicate images
  * imagesToFetch - images that need to be fetched from internet
  * imagesToPack - images to pack into epub
 */
@@ -22,7 +22,7 @@ class ImageCollector {
         return {
             coverImageInfo: null,
             imagesToPackInEpub: function() { return []; }
-        }
+        };
     }
 
     reset() {
@@ -64,7 +64,7 @@ class ImageCollector {
             } else {
                 this.imagesToFetch.push(imageInfo);
             }
-        };           
+        }           
         this.urlIndex.set(wrappingUrl, index);
         this.urlIndex.set(sourceUrl, index);
         if (dataOrigFileUrl != null) {
@@ -77,15 +77,14 @@ class ImageCollector {
         // Note, this can be called in two cases.
         // 1. Baka-Tsuki, where images have already been loaded, so image may already be present
         // 2. Other Parsers, so image is not present.
-        let that = this;
         if (!util.isNullOrEmpty(url)) {
-            let info = that.imageInfoByUrl(url);
+            let info = this.imageInfoByUrl(url);
             if (info === null) {
-                info = that.addImageInfo(url, url, null, true);
-            };
+                info = this.addImageInfo(url, url, null, true);
+            }
             info.isCover = true;
-            that.coverImageInfo = info;
-        };
+            this.coverImageInfo = info;
+        }
     }
 
     imageInfoByUrl(url) {
@@ -102,7 +101,7 @@ class ImageCollector {
     }
 
     async fetchImages(progressIndicator, parentPageUrl) {
-        for(let imageInfo of this.imagesToFetch) {
+        for (let imageInfo of this.imagesToFetch) {
             if (!imageInfo.queuedForFetch) {
                 imageInfo.queuedForFetch = true;
                 await this.fetchImage(imageInfo, progressIndicator, parentPageUrl);
@@ -115,22 +114,21 @@ class ImageCollector {
     * @private
     */
     addToPackList(imageInfo) {
-        let that = this;
         let hash = ImageCollector.calculateHash(imageInfo.arraybuffer);
-        let index = that.bitmapIndex.get(hash);
+        let index = this.bitmapIndex.get(hash);
         if (index === undefined) {
             // first time we've seen the bitmap, so all OK
-            that.bitmapIndex.set(hash, imageInfo.index);
-            that.imagesToPack.push(imageInfo);
+            this.bitmapIndex.set(hash, imageInfo.index);
+            this.imagesToPack.push(imageInfo);
         } else {
             // duplicate bitmap, use previous version
             let wrongIndex = imageInfo.index;
-            for(let [key, value] of that.urlIndex) {
+            for (let [key, value] of this.urlIndex) {
                 if (value === wrongIndex) {
-                    that.urlIndex.set(key, index);
-                };
-            };
-        };
+                    this.urlIndex.set(key, index);
+                }
+            }
+        }
     }
 
     /**
@@ -140,7 +138,7 @@ class ImageCollector {
         let hash = 0;
         let byteArray = new Uint8Array(arraybuffer);
         if (byteArray.length !== 0) {
-            for(let i = 0; i < byteArray.length; ++i) {
+            for (let i = 0; i < byteArray.length; ++i) {
                 hash = ((hash << 5) - hash) + byteArray[i];
                 hash |= 0;
             }
@@ -174,15 +172,12 @@ class ImageCollector {
     }
 
     makeImageTagReplacer(element) {
-        let that = this;
-        let wrappingElement = that.findImageWrappingElement(element);
-        let wrappingUrl = that.extractWrappingUrl(wrappingElement);
-        return new ImageTagReplacer(wrappingElement, wrappingUrl, that.userPreferences);
+        let wrappingElement = this.findImageWrappingElement(element);
+        let wrappingUrl = this.extractWrappingUrl(wrappingElement);
+        return new ImageTagReplacer(wrappingElement, wrappingUrl, this.userPreferences);
     }
 
     findImageWrappingElement(element) {
-        let that = this;
-
         // find "highest" element that is wrapping an image element
         let link = this.findWrappingLink(element);
         if (link === null) {
@@ -191,7 +186,7 @@ class ImageCollector {
         }
         let parent = link;
         while (parent != null) {
-            if (that.isImageWrapperElement(parent)) {
+            if (this.isImageWrapperElement(parent)) {
                 return parent;
             }
             parent = parent.parentElement;
@@ -219,19 +214,19 @@ class ImageCollector {
     }
 
     findImagesUsedInDocument(content) {
-        for(let imageElement of content.querySelectorAll("img")) {
+        for (let imageElement of content.querySelectorAll("img")) {
             this.fixLazyLoadImageSource(imageElement);
             let src = this.findHighestResImage(imageElement);
             let wrappingElement = this.findImageWrappingElement(imageElement);
             let wrappingUrl = this.extractWrappingUrl(wrappingElement);
             let existing = this.imageInfoByUrl(wrappingUrl);
-            if(existing == null){
+            if (existing == null) {
                 let dataOrigFileUrl = this.findDataOrigFileUrl(imageElement, wrappingUrl);
                 this.addImageInfo(wrappingUrl, src, dataOrigFileUrl, false);
             } else {
                 existing.isOutsideGallery = true;
-            };
-        };
+            }
+        }
     }
 
     findHighestResImage(img) {
@@ -251,7 +246,7 @@ class ImageCollector {
         let pairs = srcset.split(",")
             .map(o => o.trim().split(" "))
             .filter(o => (o.length == 2) && o[0].startsWith("http"));
-        for(let pair of pairs) {
+        for (let pair of pairs) {
             let size = parseInt(pair[1]);
             if (max < size) {
                 max = size;
@@ -262,7 +257,7 @@ class ImageCollector {
     }
 
     fixLazyLoadImageSource(img) {
-        for(let attrib of ["data-lazy-srcset", "data-srcset"]) {
+        for (let attrib of ["data-lazy-srcset", "data-srcset"]) {
             let lazySrcset = img.getAttribute(attrib);
             if (lazySrcset != null) {
                 img.setAttribute("srcset", lazySrcset);
@@ -270,7 +265,7 @@ class ImageCollector {
             }
         }
 
-        for(let attrib of ["data-lazy-src", "data-src"]) {
+        for (let attrib of ["data-lazy-src", "data-src"]) {
             let lazySrc = img.getAttribute(attrib);
             if (lazySrc != null) {
                 img.src = lazySrc;
@@ -283,7 +278,7 @@ class ImageCollector {
     findDataOrigFileUrl(imageElement, wrappingUrl) {
         let dataOrigFile = imageElement.getAttribute("data-orig-file");
         if ((dataOrigFile != null) && (dataOrigFile != imageElement.src)
-            && (dataOrigFile != wrappingUrl)){
+            && (dataOrigFile != wrappingUrl)) {
             let baseUrl = imageElement.ownerDocument.baseURI;
             return util.resolveRelativeUrl(baseUrl, dataOrigFile);
         }
@@ -294,16 +289,15 @@ class ImageCollector {
     * @param {element} element containing <img> tags to update
     */
     replaceImageTags(element) {
-        let that = this;
         let converters = [];
-        for(let currentNode of element.querySelectorAll("img")) {
-            converters.push(that.makeImageTagReplacer(currentNode));
-        };
-        converters.forEach(c => c.replaceTag(that.imageInfoByUrl(c.wrappingUrl)));
+        for (let currentNode of element.querySelectorAll("img")) {
+            converters.push(this.makeImageTagReplacer(currentNode));
+        }
+        converters.forEach(c => c.replaceTag(this.imageInfoByUrl(c.wrappingUrl)));
     }
 
     getImageDimensions(imageInfo) {
-        return new Promise(function(resolve, reject){ // eslint-disable-line no-unused-vars
+        return new Promise((resolve, reject) => { // eslint-disable-line no-unused-vars
             let img = new Image();
             let options = {type: imageInfo.mediaType};
             let blob = new Blob([new Uint8Array(imageInfo.arraybuffer)], options);
@@ -312,17 +306,116 @@ class ImageCollector {
                 imageInfo.height = img.height;
                 imageInfo.width = img.width;
                 URL.revokeObjectURL(dataUrl);
-                resolve();
-            }
-            img.onerror = function(){
+                resolve(img);
+            };
+            img.onerror = function() {
                 // If the image gives an error then set a general height and width
                 imageInfo.height = 1200;
                 imageInfo.width = 1600;
                 URL.revokeObjectURL(dataUrl);
-                resolve();
-            }
+                reject(img);
+            };
             // start downloading image after event handlers are set
             img.src = dataUrl;
+        });
+    }
+
+    isAnimatedImage(imageInfo) {
+        const animatedTypes = ["image/gif", "image/png", "image/webp"];
+
+        if (animatedTypes.includes(imageInfo.mediaType))
+        {
+            const maxScanBytes = 65536; 
+            const buffer = imageInfo.arraybuffer;
+            const scanLimit = Math.min(buffer.byteLength, maxScanBytes);
+            const view = new DataView(buffer, 0, scanLimit);
+            const limit = Math.max(0, view.byteLength - 4);
+
+            try {
+                for (let i = 0; i < limit; i++) {
+                    const current32 = view.getUint32(i, false);
+
+                    if ((imageInfo.mediaType == "image/webp" && (current32 === 0x414E494D || current32 === 0x414E4D46))
+                        || (imageInfo.mediaType == "image/png" && current32 === 0x6163544C)
+                        || (imageInfo.mediaType == "image/gif" && (current32 >>> 8) === 0x21F904)
+                    ) return true;
+                }
+            }
+            catch (e) {
+                console.error("Binary animation detection exception:", e);
+            }
+        }
+        return false;
+    }
+
+    skipAnimated(imageInfo) {
+        if (this.userPreferences.compressImagesAnimated.value) return false;
+        return this.isAnimatedImage(imageInfo);
+    }
+
+    runCompression(imageInfo, img) {
+        return new Promise((resolve, reject) => {
+            if (this.userPreferences.compressImages.value && !this.skipAnimated(imageInfo)) 
+            {
+                let outputType = "image/jpeg";
+                switch (this.userPreferences.compressImagesType.value) {
+                    case "auto":
+                        outputType = util.detectMimeType(imageInfo.getBase64(25));
+                        break;
+                    case "webp":
+                        outputType = "image/webp";
+                        break;
+                    case "png":
+                        outputType = "image/png";
+                        break;
+                    case "jpg":
+                    default:
+                        outputType = "image/jpeg";
+                        break;
+                }
+
+                if (imageInfo.isCover && this.userPreferences.compressImagesJpgCover.value)
+                {
+                    outputType = "image/jpeg";
+                }
+                let c = document.createElement("canvas");
+                let ctx = c.getContext("2d");
+                let maxResolution = this.userPreferences.compressImagesMaxResolution.value;            
+                if (imageInfo.height > maxResolution || imageInfo.width > maxResolution)
+                {
+                    if (imageInfo.height > imageInfo.width)
+                    {
+                        c.height = maxResolution;
+                        c.width = Math.max(1, Math.round((imageInfo.width * 1.0) / ((imageInfo.height * 1.0)/maxResolution)));
+                    }
+                    else
+                    {
+                        c.width = maxResolution;
+                        c.height = Math.max(1, Math.round((imageInfo.height * 1.0) / ((imageInfo.width * 1.0)/maxResolution)));
+                    }
+                }
+                else
+                {
+                    c.height = imageInfo.height;
+                    c.width = imageInfo.width;
+                }
+                ctx.drawImage(img, 0, 0, c.width, c.height);
+                c.toBlob(async (cBlob) => {
+                    try {
+                        imageInfo.height = c.height;
+                        imageInfo.width = c.width;
+                        imageInfo.mediaType = outputType;
+                        imageInfo.arraybuffer = await cBlob.arrayBuffer();
+                        resolve();
+                    } catch (e) {
+                        reject();
+                    }
+                }, outputType, 0.9);
+            }
+            else
+            {
+                resolve();
+            }
         });
     }
 
@@ -336,9 +429,13 @@ class ImageCollector {
             xhr = await this.findImageFileUrl(xhr, imageInfo, imageInfo.dataOrigFileUrl, fetchOptions);
             imageInfo.mediaType = xhr.contentType;
             imageInfo.arraybuffer = xhr.arrayBuffer;
-            await this.getImageDimensions(imageInfo);
+            this.fixupInvalidMediaType(imageInfo);
+            {
+                let img = await this.getImageDimensions(imageInfo);
+                await this.runCompression(imageInfo, img);
+            }
             progressIndicator();
-            this.addToPackList(imageInfo)
+            this.addToPackList(imageInfo);
         }
         catch (error)
         {
@@ -348,7 +445,27 @@ class ImageCollector {
         }
     }
 
-    findImageFileUrl(xhr, imageInfo, dataOrigFileUrl, fetchOptions) {
+    fixupInvalidMediaType(imageInfo) {
+        // Trust the actual bytes over the server's Content-Type. Some CDNs (e.g. Royal
+        // Road) return a wrong type (image/png for a JPEG), producing an invalid EPUB
+        // image that readers reject. Fall back to the header/extension only when the
+        // bytes are an unrecognised format.
+        let detected = util.detectMimeType(imageInfo.getBase64(25));
+        if (detected != null) {
+            imageInfo.mediaType = detected;
+            return;
+        }
+        if (!imageInfo.mediaType?.startsWith("image")) {
+            let path = new URL(imageInfo.sourceUrl).pathname;
+            let index = path.lastIndexOf(".");
+            let format = (index < 0)
+                ? "jpeg"
+                : path.substring(index + 1);
+            imageInfo.mediaType = "image/" + format;
+        }
+    }
+
+    async findImageFileUrl(xhr, imageInfo, dataOrigFileUrl, fetchOptions) {
         // with Baka-Tsuki, the link wrapping the image will return an HTML
         // page with a set of images.  We need to pick the desired image
         if (xhr.isHtml()) {
@@ -357,11 +474,13 @@ class ImageCollector {
             let temp = this.selectImageUrlFromImagePage(xhr.responseXML);
             if (temp == null) {
                 if (dataOrigFileUrl != null) {
-                    return this.findImageFileUrlUsingDataOrigFileUrl(imageInfo);
+                    return await this.findImageFileUrlUsingDataOrigFileUrl(imageInfo);
                 }
-                let baseUri = xhr.responseXML.baseURI;
-                let errorMsg = chrome.i18n.getMessage("gotHtmlExpectedImageWarning", [baseUri]);
-                ErrorLog.log(errorMsg);
+                if (!this.userPreferences?.disableImageResError?.value) {
+                    let baseUri = xhr.responseXML.baseURI;
+                    let errorMsg = UIText.Error.gotHtmlExpectedImageWarning(baseUri);
+                    ErrorLog.log(errorMsg);
+                }
                 temp = imageInfo.sourceUrl;
             }
             temp = ImageCollector.removeSizeParamsFromWordPressQuery(temp);
@@ -371,14 +490,13 @@ class ImageCollector {
             // page wasn't HTML, so assume is actual image
             imageInfo.sourceUrl = xhr.response.url;
             this.urlIndex.set(xhr.response.url, imageInfo.index);
-            return Promise.resolve(xhr);
+            return xhr;
         }
     }
 
-    findImageFileUrlUsingDataOrigFileUrl(imageInfo) {
-        return HttpClient.wrapFetch(imageInfo.dataOrigFileUrl).then(
-            xhr => this.findImageFileUrl(xhr, imageInfo, null)
-        );
+    async findImageFileUrlUsingDataOrigFileUrl(imageInfo) {
+        let xhr = await HttpClient.wrapFetch(imageInfo.dataOrigFileUrl);
+        return await this.findImageFileUrl(xhr, imageInfo, null);
     }
     
     imagesToPackInEpub() {
@@ -428,11 +546,11 @@ class ImageCollector {
     }
 
     /**
-    *  Derived classess will override
+    *  Derived classes will override
     *  Base version tells user there's a problem
     */
     selectImageUrlFromImagePage(dom) {
-        // try mediawkiki format
+        // try MediaWiki format
         let div = dom.querySelector("div.fullMedia");
         if (div !== null) {
             let link = div.querySelector("a");
@@ -441,21 +559,21 @@ class ImageCollector {
         return null;
     }
 
-    preprocessImageTags(content, parentPageUrl) {
+    async preprocessImageTags(content, parentPageUrl) {
         if (this.userPreferences.skipImages.value) {
-            util.removeChildElementsMatchingCss(content, "img, image");
-            return Promise.resolve(content);
+            util.removeChildElementsMatchingSelector(content, "img, image");
+            return content;
         } else {
-            return ImageCollector.replaceHyperlinksToImagesWithImages(content, parentPageUrl);
+            return await ImageCollector.replaceHyperlinksToImagesWithImages(content, parentPageUrl);
         }
     }
 
-    static replaceHyperlinksToImagesWithImages(content, parentPageUrl) {
+    static async replaceHyperlinksToImagesWithImages(content, parentPageUrl) {
         let toReplace = util.getElements(content, "a", ImageCollector.isHyperlinkToImage);
-        for(let hyperlink of toReplace.filter(h => !ImageCollector.linkContainsImageTag(h))) {
+        for (let hyperlink of toReplace.filter(h => !ImageCollector.linkContainsImageTag(h))) {
             ImageCollector.replaceHyperlinkWithImg(hyperlink);
         }
-        return Imgur.expandGalleries(content, parentPageUrl);
+        return await Imgur.expandGalleries(content, parentPageUrl);
     }
 
     /** @private */
@@ -489,18 +607,18 @@ class ImageCollector {
 
 //==============================================================
 
-class VariableSizeImageCollector extends ImageCollector {
+class VariableSizeImageCollector extends ImageCollector { // eslint-disable-line no-unused-vars
     constructor() {
         super();
     }
 
     onUserPreferencesUpdate(userPreferences) {
         super.onUserPreferencesUpdate(userPreferences);
-        if (userPreferences.higestResolutionImages.value) {
+        if (userPreferences.highestResolutionImages.value) {
             this.initialUrlToTry = (imageInfo) => imageInfo.wrappingUrl;
         } else {
             this.initialUrlToTry = (imageInfo) => imageInfo.sourceUrl;
-        };
+        }
     }
 }
 
@@ -524,16 +642,15 @@ class ImageTagReplacer {
      * @param {imageInfo} imageInfo to use to construct replacement tag
      */
     replaceTag(imageInfo) {
-        let that = this;
         // replace tag with nested <img> tag, with new <img> tag
-        let parent = that.wrappingElement.parentElement;
+        let parent = this.wrappingElement.parentElement;
         if ((imageInfo != null) && (parent != null)) {
-            if (that.isDuplicateImageToRemove(imageInfo)) {
-                that.wrappingElement.remove();
+            if (this.isDuplicateImageToRemove(imageInfo)) {
+                this.wrappingElement.remove();
             } else {
-                that.insertImageInLegalParent(parent, imageInfo);
-            };
-        };
+                this.insertImageInLegalParent(parent, imageInfo);
+            }
+        }
     }
 
     /** @private */
@@ -549,7 +666,7 @@ class ImageTagReplacer {
     isImageInline(imageInfo) {
         const MAX_INLINE_IMAGE_HEIGHT = 200;
         let parent = this.wrappingElement;
-        while((parent != null) && util.isInlineElement(parent)) {
+        while ((parent != null) && util.isInlineElement(parent)) {
             parent = parent.parentNode;
         }
         return this.isParagraph(parent) &&
@@ -559,7 +676,7 @@ class ImageTagReplacer {
 
     /** @private */
     isParagraph(element) {
-        return (element != null) && (element.tagName.toLowerCase() === "p")
+        return (element != null) && (element.tagName.toLowerCase() === "p");
     }
 
     /** @private */
@@ -575,10 +692,10 @@ class ImageTagReplacer {
         while (util.isInlineElement(parent) && (parent.parentNode != null)) {
             nodeAfter = parent;
             parent = parent.parentNode;
-        };
+        }
         if (this.isParagraph(parent)) {
             nodeAfter = parent;
-        };
+        }
         let newImage = imageInfo.createImageElement(this.userPreferences);
         nodeAfter.parentNode.insertBefore(newImage, nodeAfter);
         util.removeHeightAndWidthStyleFromParents(newImage);
@@ -588,8 +705,8 @@ class ImageTagReplacer {
 
     copyCaption(newImage, oldWrapper) {
         let thumbCaption = oldWrapper.querySelector("div.thumbcaption");
-        if (thumbCaption != null){
-            for(let magnify of thumbCaption.querySelectorAll("div.magnify")){
+        if (thumbCaption != null) {
+            for (let magnify of thumbCaption.querySelectorAll("div.magnify")) {
                 magnify.remove();
             }
             if (!util.isNullOrEmpty(thumbCaption.textContent)) {

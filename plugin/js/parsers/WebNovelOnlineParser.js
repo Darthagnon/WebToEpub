@@ -3,29 +3,29 @@
 //dead url/ parser
 parserFactory.register("webnovelonline.com", () => new WebNovelOnlineParser());
 
-class WebNovelOnlineParser extends Parser{
+class WebNovelOnlineParser extends Parser {
     constructor() {
         super();
     }
 
     getChapterUrls(dom) {
         let chapters = [...dom.querySelectorAll("div.chapter-list a")]
-            .map(a => util.hyperLinkToChapter(a))
+            .map(a => util.hyperLinkToChapter(a));
         return Promise.resolve(chapters.reverse());
-    };
+    }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
-    };
+        return Parser.findConstructedContent(dom);
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("div.novel-dexc h1");
-    };
+    }
 
     extractAuthor(dom) {
         let authorLabel = dom.querySelector("div.novel-desc > div.info > p:nth-child(1) > span:nth-child(2)");
         return (authorLabel === null) ? super.extractAuthor(dom) : authorLabel.textContent;
-    };
+    }
 
     findCoverImageUrl(dom) {
         return util.getFirstImgSrc(dom, "div.book");
@@ -54,14 +54,14 @@ class WebNovelOnlineParser extends Parser{
             .filter(p => (p !== null) && (0 < p.length));
         for (let text of paragraphs) {
             let p = newDoc.dom.createElement("p");
-            p.appendChild(newDoc.dom.createTextNode(text))
+            p.appendChild(newDoc.dom.createTextNode(text));
             newDoc.content.appendChild(p);
         }
     }
 
     static addHtmlToDocument(content, text) {
         text = "<div id=\"raw\">" + text + "</div>";
-        let rawDom = new DOMParser().parseFromString(text, "text/html");
+        let rawDom = util.sanitize(text);
         content.appendChild(rawDom.querySelector("div#raw"));
     }
 
@@ -81,6 +81,6 @@ class WebNovelOnlineParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "div.action");
+        util.removeChildElementsMatchingSelector(node, "div.action");
     }
 }

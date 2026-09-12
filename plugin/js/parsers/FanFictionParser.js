@@ -3,15 +3,15 @@
 */
 "use strict";
 
-parserFactory.register("www.fanfiction.net", function() { return new FanFictionParser() });
+parserFactory.register("www.fanfiction.net", () => new FanFictionParser());
 
 // fictionpress.com has same format as fanfiction.net
-parserFactory.register("www.fictionpress.com", function() { return new FanFictionParser() });
+parserFactory.register("www.fictionpress.com", () => new FanFictionParser());
 
 class FanFictionParser extends Parser {
     constructor() {
         super();
-        this.minimumThrottle = 3000;
+        this.minimumThrottle = 3050;
     }
 
     async getChapterUrls(dom) {
@@ -24,7 +24,7 @@ class FanFictionParser extends Parser {
     }
 
     getOptions(dom) {
-        return [...dom.querySelectorAll("select#chap_select option")]
+        return [...dom.querySelectorAll("select#chap_select option")];
     }
 
     optionToChapterInfo(baseUrl, optionElement) {
@@ -58,7 +58,7 @@ class FanFictionParser extends Parser {
 
     async fetchChapter(url) {
         let dom = await super.fetchChapter(url);
-        this.addTitleToChapter(url, dom)
+        this.addTitleToChapter(url, dom);
         return dom;
     }
 
@@ -68,19 +68,30 @@ class FanFictionParser extends Parser {
         {
             return await super.fetchWebPageContent(webPage);
         }
-        catch(ex)
+        catch (ex)
         {
             //Determine if path contains extra parameters. Immediately fail if already shortened.
             //Shortened URI is not always ideal solution; apparently related to caching on server. 
-            let regex = /(https?:\/\/(?:www\.)?\w+\.\w+\/s\/\d+\/\d+)\/[a-z\-0-9]+/i
+            let regex = /(https?:\/\/(?:www\.)?\w+\.\w+\/s\/\d+\/\d+\/)[a-z\-0-9]+/i;
             let shortUri = regex.exec(webPage.sourceUrl);
             if (shortUri)
             {
+                //Primary failure condition - catch where fanfiction controller fails to forward view
                 console.log(`Failed to load URI [${webPage.sourceUrl}] - Attempting alternative. [${shortUri[1]}]`);
                 //Await throttle timer again for second page fetch.
                 await this.rateLimitDelay();
                 webPage.sourceUrl = shortUri[1];
-                return await super.fetchWebPageContent(webPage);
+                return await this.fetchWebPageContent(webPage);
+            }
+            else if (webPage.sourceUrl.endsWith("/"))
+            {
+                //Secondary failure condition - catch where fanfiction controller failed to load from cache
+                let newUrl = webPage.sourceUrl.slice(0, -1);
+                console.log(`Failed to load URI [${webPage.sourceUrl}] - Attempting alternative. [${newUrl}]`);
+                //Await throttle timer again for second page fetch.
+                await this.rateLimitDelay();
+                webPage.sourceUrl = newUrl;
+                return await this.fetchWebPageContent(webPage);
             }
             else
             {
@@ -92,10 +103,10 @@ class FanFictionParser extends Parser {
     addTitleToChapter(url, dom) {
         let path = url.split("/");
         let chapterId = path[path.length - 2];
-        for(let option of this.getOptions(dom)) {
+        for (let option of this.getOptions(dom)) {
             if (chapterId === option.getAttribute("value")) {
                 let title = dom.createElement("H1");
-                title.appendChild(dom.createTextNode(option.textContent))
+                title.appendChild(dom.createTextNode(option.textContent));
                 let content = this.findContent(dom);
                 content.insertBefore(title, content.firstChild);
                 break;
@@ -104,31 +115,28 @@ class FanFictionParser extends Parser {
     }
 
     populateInfoDiv(infoDiv, dom) {
-        let sanitize = new Sanitize();
-        // keep data-xutime for outside processing because locale time is local
-        sanitize.attributesForTag.set("span",["data-xutime"])
-        for(let n of this.getInformationEpubItemChildNodes(dom).filter(n => n != null)) {
-            let clone = n.cloneNode(true);
+        for (let n of this.getInformationEpubItemChildNodes(dom).filter(n => n != null)) {
+            let clone = util.sanitizeNode(n);
             this.cleanInformationNode(clone);
             if (clone != null) {
                 // convert dates to avoid '19hours ago'
-                for(let s of clone.querySelectorAll("span[data-xutime]")) {
+                for (let s of clone.querySelectorAll("span[data-xutime]")) {
                     let time = new Date(1000*s.getAttribute("data-xutime"));
                     s.textContent = time.toLocaleString();
                 }
                 // fix relative url links.
-                for(let a of clone.querySelectorAll("a[href]")) {
-                    a.href = new URL(a["href"], dom.baseURI).href
+                for (let a of clone.querySelectorAll("a[href]")) {
+                    a.href = new URL(a["href"], dom.baseURI).href;
                 }
                 // Fix for > from CSS
-                for(let s of clone.querySelectorAll("span.icon-chevron-right")) {
+                for (let s of clone.querySelectorAll("span.icon-chevron-right")) {
                     s.textContent = " > ";
                 }
-                infoDiv.appendChild(sanitize.clean(clone));
+                infoDiv.appendChild(clone);
             }
         }
         // this "page" doesn't go through image collector, so strip images
-        util.removeChildElementsMatchingCss(infoDiv, "img");
+        util.removeChildElementsMatchingSelector(infoDiv, "img");
     }
 
     findCoverImageUrl(dom) {
@@ -146,7 +154,18 @@ class FanFictionParser extends Parser {
         return [...dom.querySelectorAll("div#pre_story_links, div#profile_top")];
     }
 
+    extractSubject(dom) {
+        let tags = [...dom.querySelector("#profile_top  span.xgray").childNodes].filter(a => a.nodeName == "#text")[1].textContent;
+        let regex = new RegExp(/( - Chapters: .*)|( - Words: .*)/);
+        tags = tags.replace(regex, "").replaceAll(",", ";").replaceAll(" - ", ", ").split(",");
+        return tags.map(e => e.trim()).filter(a => a != "").join(", ");
+    }
+
+    extractDescription(dom) {
+        return dom.querySelector("#profile_top div.xcontrast_txt").textContent.trim();
+    }
+
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "button, span[title]");
+        util.removeChildElementsMatchingSelector(node, "button, span[title]");
     }
 }

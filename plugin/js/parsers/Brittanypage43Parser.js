@@ -1,12 +1,17 @@
 "use strict";
 
 parserFactory.register("brittanypage43.com", () => new Brittanypage43Parser());
+HttpClient.blockedSites.add("brittanypage43.com");
 
-class Brittanypage43Parser extends Parser{
+class Brittanypage43Parser extends Parser {
     constructor() {
         super();
     }
 
+    disabled() {
+        return UIText.Warning.parserDisabledNotification;
+    }
+    
     async getChapterUrls(dom) {
         return [...dom.querySelectorAll("a.post-card-content-link")]
             .map(this.linkToChapter).reverse();

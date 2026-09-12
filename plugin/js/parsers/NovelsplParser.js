@@ -2,7 +2,7 @@
 
 parserFactory.register("novels.pl", () => new NovelsplParser());
 
-class NovelsplParser extends Parser{
+class NovelsplParser extends Parser {
     constructor() {
         super();
     }
@@ -37,7 +37,7 @@ class NovelsplParser extends Parser{
 
     static async fetchMultipleToc(chapters, tocInfo, chapterUrlsUI) {
         let maxPage = Math.ceil(tocInfo.max / 50);
-        for(let i = 2; i <= maxPage; ++i) {
+        for (let i = 2; i <= maxPage; ++i) {
             let partialList = await NovelsplParser.fetchTocData(i, tocInfo);
             chapterUrlsUI.showTocProgress(partialList);
             chapters = chapters.concat(partialList);
@@ -71,14 +71,14 @@ class NovelsplParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        for(let p of [...element.querySelectorAll("p")]) {
+        for (let p of [...element.querySelectorAll("p")]) {
             let c = p.textContent;
             if ((c === "This chapter is updated by Novels.pl") || 
                 (c === "Liked it? Take a second to support Novels on Patreon!")) {
                 p.remove();
             }
         }
-        util.removeChildElementsMatchingCss(element, "ul.pager");
+        util.removeChildElementsMatchingSelector(element, "ul.pager");
         super.removeUnwantedElementsFromContentElement(element);
     }
 
@@ -87,7 +87,7 @@ class NovelsplParser extends Parser{
     }
 
     preprocessRawDom(chapterDom) {
-        util.removeChildElementsMatchingCss(chapterDom, "a[href='https://www.patreon.com/novelspl']");
+        util.removeChildElementsMatchingSelector(chapterDom, "a[href='https://www.patreon.com/novelspl']");
     }
 
     getInformationEpubItemChildNodes(dom) {

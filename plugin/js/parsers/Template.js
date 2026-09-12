@@ -25,7 +25,7 @@ parserFactory.registerRule(
 );
 */
 
-class TemplateParser extends Parser{
+class TemplateParser extends Parser { // eslint-disable-line no-unused-vars
     constructor() {
         super();
         //Optional Parameters:
@@ -36,13 +36,6 @@ class TemplateParser extends Parser{
         this.minimumThrottle = 3000;
         */
     }
-
-    //overwrite Max web pages to fetch simultaneously mostly used on sites that block multiple requests
-    /*
-    clampSimultanousFetchSize() {
-        return 1;
-    }
-    */
 
     // returns promise with the URLs of the chapters to fetch
     // promise is used because may need to fetch the list of URLs from internet
@@ -115,6 +108,17 @@ class TemplateParser extends Parser{
     }
     */
 
+    // load EpubMetaInfo async in local variable to retieve with all other Metadata functions
+    // Optional, will default to "return"
+    /*
+    async loadEpubMetaInfo(){
+        let data = (await HttpClient.fetchJson(api)).json;
+        this.subject = data.subject;
+        ...
+        return;
+    }
+    */
+
     // Genre of the story
     // Optional, Genre for metadata, if not provided, will default to ""
     /*
@@ -132,6 +136,17 @@ class TemplateParser extends Parser{
     }
     */
 
+    // Publisher of the story
+    // Optional, Publisher for metadata, if not provided, will default to ""
+    /*
+    extractPublisher(dom) {
+        // Element from dom containing publisher data
+        return dom.querySelector("").textContent.trim();
+
+        return "site_name";
+    }
+    */
+
     // Optional, supply if need to do special manipulation of content
     // e.g. decrypt content
     /*
@@ -143,7 +158,7 @@ class TemplateParser extends Parser{
     // Optional, supply if need to do custom cleanup of content
     /*
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "button");
+        util.removeChildElementsMatchingSelector(element, "button");
         super.removeUnwantedElementsFromContentElement(element);
     }
     */
@@ -182,9 +197,36 @@ class TemplateParser extends Parser{
     */
 
     // Optional, supply if need to chase hyperlinks in page to get all chapter content
+    // or site can send challenge pages for some chapters
     /*
     async fetchChapter(url) {
+        // NoContentToError403 option will not be able to handle challenge pages
         return (await HttpClient.wrapFetch(url)).responseXML;
+
+        // Handling to catch sites that send challenge pages
+        // needed for the NoContentToError403 option to work
+        // Note, need to implement isCustomError() and setCustomErrorResponse()
+        let options = { parser: this };
+        return (await HttpClient.wrapFetch(url, options)).responseXML;
+    }
+    */
+
+    // Optional, supply these if site can send challenge pages for some chapters
+    /*
+    // return true if response is a challenge response
+    isCustomError(response) {
+        return (response.responseXML.title == "Just a moment...");
+    }
+
+    // what to do if encounter challenge
+    setCustomErrorResponse(url, wrapOptions) {
+        let newresp = {};
+        newresp.url = url;
+        newresp.wrapOptions = wrapOptions;
+        newresp.response = {};
+        newresp.response.url = this.RestToUrl(checkedresponse.response.url);
+        newresp.response.status = 403;
+        return newresp;
     }
     */
 

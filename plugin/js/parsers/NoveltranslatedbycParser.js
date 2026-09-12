@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("noveltranslatedbyc.blogspot.com", () => new NoveltranslatedbycParser());
 
-class NoveltranslatedbycParser extends BlogspotParser{
+class NoveltranslatedbycParser extends BlogspotParser {
     constructor() {
         super();
     }
@@ -28,7 +28,7 @@ class NoveltranslatedbycParser extends BlogspotParser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "button");
+        util.removeChildElementsMatchingSelector(element, "button");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

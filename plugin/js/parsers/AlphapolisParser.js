@@ -1,8 +1,9 @@
 "use strict";
 parserFactory.register("alphapolis.co.jp", () => new AlphapolisParser());
-class AlphapolisParser extends Parser{
+class AlphapolisParser extends Parser {
     constructor() {
         super();
+        this.minimumThrottle = 15000;
     }
     async getChapterUrls(dom) {
         let menu = dom.querySelector("div.episodes");
@@ -17,7 +18,7 @@ class AlphapolisParser extends Parser{
     extractAuthor(dom) {
         let authorLink = dom.querySelector("div.author a");
         return (authorLink === null) ? super.extractAuthor(dom) : authorLink.textContent;
-    };
+    }
     extractLanguage() {
         return "jp";
     }

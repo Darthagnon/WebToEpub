@@ -2,7 +2,7 @@
 
 parserFactory.register("gunnerkrigg.com", () => new GunnerkriggParser());
 
-class GunnerkriggParser extends Parser{
+class GunnerkriggParser extends Parser {
     constructor() {
         super();
     }
@@ -22,7 +22,7 @@ class GunnerkriggParser extends Parser{
     findContent(dom) {
         let content = dom.querySelector("div.comic");
         if (content !== null) {
-            util.removeChildElementsMatchingCss(content, ".nav, .extra");
+            util.removeChildElementsMatchingSelector(content, ".nav, .extra");
         }
         return content;
     }

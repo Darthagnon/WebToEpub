@@ -4,7 +4,6 @@
 module("ZipAndDownload");
 
 function syncLoadTestFile() {
-    let that = this;
     let xhr = new XMLHttpRequest();
     xhr.open("GET", "../testdata/C1.html", false);
     xhr.send(null);
@@ -16,11 +15,12 @@ QUnit.test("CanDownloadMoreThan10Megs", function (assert) {
     assert.expect(0);
     let testData = syncLoadTestFile();
 
-    let zipFile = new JSZip();
+    let ZipWriter = new zip.BlobWriter("application/epub+zip");
+    let zipFile = new zip.ZipWriter(ZipWriter,{useWebWorkers: false,compressionMethod: 8});
     for (let i = 0; i < 50; ++i) {
-        zipFile.file("test" + i + ".txt", testData);
+        zipFile.add("test" + i + ".txt", new zip.TextReader(testData));
     };
-    let blob = zipFile.generate({ type: "blob" });
+    let blob = zipFile.close();
 
     // saveAs(blob, "web.epub");
 

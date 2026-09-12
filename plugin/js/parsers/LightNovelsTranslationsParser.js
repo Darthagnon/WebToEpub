@@ -1,8 +1,8 @@
 "use strict";
 
-parserFactory.register("lightnovelstranslations.com", function() { return new LightNovelsTranslationsParser() });
+parserFactory.register("lightnovelstranslations.com", () => new LightNovelsTranslationsParser());
 
-class LightNovelsTranslationsParser extends WordpressBaseParser{
+class LightNovelsTranslationsParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -10,7 +10,7 @@ class LightNovelsTranslationsParser extends WordpressBaseParser{
     async getChapterUrls(dom) {
         return [...dom.querySelectorAll("li.chapter-item a")]
             .map(a => util.hyperLinkToChapter(a));
-    };
+    }
 
     findContent(dom) {
         return dom.querySelector("div.text_story");
@@ -26,5 +26,14 @@ class LightNovelsTranslationsParser extends WordpressBaseParser{
 
     getInformationEpubItemChildNodes(dom) {
         return [...dom.querySelectorAll("div.novel_text")];
+    }
+
+    extractAuthor(dom) {
+        const authorEl = dom.querySelector("div.novel_detail_info > ul > li:nth-child(1)");
+        if (authorEl) {
+            return authorEl.textContent.replace("Author: ", "");
+        }
+
+        return "<unknown>";
     }
 }

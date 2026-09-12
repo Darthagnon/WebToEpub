@@ -2,7 +2,7 @@
 
 parserFactory.register("asianhobbyist.com", () => new AsianHobbyistParser());
 
-class AsianHobbyistParser extends WordpressBaseParser{
+class AsianHobbyistParser extends WordpressBaseParser {
     constructor() {
         super();
     }
@@ -10,11 +10,11 @@ class AsianHobbyistParser extends WordpressBaseParser{
     async getChapterUrls(dom) {
         return [...dom.querySelectorAll("div.releases-wrap a")]
             .map(a => util.hyperLinkToChapter(a));
-    };
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector(".post-title.entry-title a");
-    };
+    }
 
     findContent(dom) {
         let content = super.findContent(dom);
@@ -25,7 +25,7 @@ class AsianHobbyistParser extends WordpressBaseParser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "div.code-block, div.osny-nightmode");
+        util.removeChildElementsMatchingSelector(element, "div.code-block, div.osny-nightmode");
         super.removeUnwantedElementsFromContentElement(element);
     }
 
@@ -42,6 +42,6 @@ class AsianHobbyistParser extends WordpressBaseParser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, ".btn");
+        util.removeChildElementsMatchingSelector(node, ".btn");
     }    
 }

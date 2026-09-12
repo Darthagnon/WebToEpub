@@ -1,11 +1,8 @@
-/*
-  Parser used when can't match a parser for the document
-*/
 "use strict";
 
 parserFactory.registerManualSelect(
     "Default", 
-    function() { return new DefaultParser() }
+    () => new DefaultParser()
 );
 
 class DefaultParser extends Parser {
@@ -27,17 +24,18 @@ class DefaultParser extends Parser {
 
     populateUI(dom) {
         super.populateUI(dom);
-        DefaultParserUI.setupDefaultParserUI(dom, this);
+        let hostname = util.extractHostName(dom.baseURI);
+        // Pass the preloaded live DOM to the UI initialization
+        DefaultParserUI.setupDefaultParserUI(hostname, this, dom);
     }
 
-    // override default (keep nearly everything, may be wanted)
     removeUnwantedElementsFromContentElement(element) {
         util.removeElements(element.querySelectorAll("script[src], iframe"));
         util.removeComments(element);
         util.removeUnwantedWordpressElements(element);
         util.removeMicrosoftWordCrapElements(element);
         this.logic.removeUnwanted(element);
-    };
+    }
 
     findChapterTitle(dom) {
         return this.logic.findChapterTitle(dom);

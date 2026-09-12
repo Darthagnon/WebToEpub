@@ -3,7 +3,7 @@
 parserFactory.register("shw5.cc", () => new Shw5Parser());
 parserFactory.register("bqka.cc", () => new Shw5Parser());
 
-class Shw5Parser extends Parser{
+class Shw5Parser extends Parser {
     constructor() {
         super();
     }
@@ -18,7 +18,7 @@ class Shw5Parser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "a.ll, a.rr");
+        util.removeChildElementsMatchingSelector(element, "a.ll, a.rr");
         super.removeUnwantedElementsFromContentElement(element);
     }
 

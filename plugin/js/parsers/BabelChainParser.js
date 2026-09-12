@@ -5,7 +5,7 @@ parserFactory.register("novel.babelchain.org", () => new BabelChainParser());
 //dead url
 parserFactory.register("babelnovel.com", () => new BabelChainParser());
 
-class BabelChainParser extends Parser{
+class BabelChainParser extends Parser {
     constructor() {
         super();
     }
@@ -46,7 +46,7 @@ class BabelChainParser extends Parser{
     }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
+        return Parser.findConstructedContent(dom);
     }
 
     findCoverImageUrl(dom) {
@@ -59,11 +59,6 @@ class BabelChainParser extends Parser{
     getInformationEpubItemChildNodes(dom) {
         let synopsis = this.findDiv(dom, "book-info_synopsis-wrapper");
         return synopsis === null ? [] : [synopsis];
-    }
-
-    // rate limit site
-    clampSimultanousFetchSize() {
-        return 1;
     }
 
     async fetchChapter(url) {
@@ -84,7 +79,7 @@ class BabelChainParser extends Parser{
             .filter(p => !util.isNullOrEmpty(p));
         for (let text of paragraphs) {
             let p = newDoc.dom.createElement("p");
-            p.appendChild(newDoc.dom.createTextNode(text))
+            p.appendChild(newDoc.dom.createTextNode(text));
             newDoc.content.appendChild(p);
         }
         return newDoc.dom;

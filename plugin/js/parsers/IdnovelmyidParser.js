@@ -3,7 +3,7 @@
 //dead url/ parser
 parserFactory.register("idnovel.my.id", () => new IdnovelmyidParser());
 
-class IdnovelmyidParser extends Parser{
+class IdnovelmyidParser extends Parser {
     constructor() {
         super();
     }
@@ -22,7 +22,7 @@ class IdnovelmyidParser extends Parser{
     }
 
     removeUnwantedElementsFromContentElement(element) {
-        util.removeChildElementsMatchingCss(element, "center");
+        util.removeChildElementsMatchingSelector(element, "center");
         super.removeUnwantedElementsFromContentElement(element);
     }
 
@@ -39,6 +39,6 @@ class IdnovelmyidParser extends Parser{
     }
 
     cleanInformationNode(node) {
-        util.removeChildElementsMatchingCss(node, "script");
+        util.removeChildElementsMatchingSelector(node, "script");
     }
 }

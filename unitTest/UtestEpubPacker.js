@@ -70,8 +70,8 @@ test("buildContentOpf", function (assert) {
             "<dc:creator opf:file-as=\"Dummy &amp; Author\" opf:role=\"aut\">Dummy &amp; Author</dc:creator>" +
             "<dc:identifier id=\"BookId\" opf:scheme=\"URI\">Dummy UUID</dc:identifier>"+
             "<dc:contributor opf:role=\"bkp\">[https://github.com/dteviot/WebToEpub] (ver. unknown)</dc:contributor>"+
-            "<meta content=\"BakaSeries\" name=\"calibre:series\"/>" +
-            "<meta content=\"666\" name=\"calibre:series_index\"/>" +
+            "<meta name=\"calibre:series\" content=\"BakaSeries\"/>" +
+            "<meta name=\"calibre:series_index\" content=\"666\"/>" +
             "<dc:source id=\"id.xhtml0000\">http://dummy.com/Title0</dc:source>" +
             "<dc:source id=\"id.xhtml0001\">http://dummy.com/Title1</dc:source>" +
             "</metadata>"+
@@ -115,13 +115,13 @@ test("buildEpub3ContentOpf", function (assert) {
             "<dc:contributor id=\"translator\">GoogleTranslate</dc:contributor>" +
             "<meta refines=\"#translator\" property=\"file-as\">GoogleTranslate</meta>" +
             "<meta refines=\"#translator\" property=\"role\">trl</meta>" +
-            "<dc:identifier id=\"BookId\">Dummy UUID</dc:identifier>"+
+            "<dc:identifier id=\"BookId\">uri:Dummy UUID</dc:identifier>"+
             "<meta refines=\"#BookId\" property=\"identifier-type\">URI</meta>"+
             "<meta property=\"dcterms:modified\">2015-10-17T21:04:54Z</meta>" +
             "<dc:contributor id=\"packingTool\">[https://github.com/dteviot/WebToEpub] (ver. unknown)</dc:contributor>"+
             "<meta refines=\"#packingTool\" property=\"role\">bkp</meta>" +
-            "<meta content=\"BakaSeries\" name=\"calibre:series\"/>" +
-            "<meta content=\"666\" name=\"calibre:series_index\"/>" +
+            "<meta name=\"calibre:series\" content=\"BakaSeries\"/>" +
+            "<meta name=\"calibre:series_index\" content=\"666\"/>" +
             "<dc:source id=\"id.xhtml0000\">http://dummy.com/Title0</dc:source>" +
             "<dc:source id=\"id.xhtml0001\">http://dummy.com/Title1</dc:source>" +
             "</metadata>"+
@@ -138,6 +138,15 @@ test("buildEpub3ContentOpf", function (assert) {
             "</spine>" +
         "</package>"
     );
+});
+
+test("buildContentOpf uses publication date", function (assert) {
+    let epubPacker = makePacker();
+    epubPacker.metaInfo.datePublished = "2019-12-23T00:00:00.000Z";
+    epubPacker.getDateForMetaData = function () { return "2026-07-31T12:34:56.789Z"; };
+    let contentOpf = epubPacker.buildContentOpf(makeEpubItemSupplier());
+
+    assert.ok(contentOpf.includes("<dc:date>2019-12-23T00:00:00.000Z</dc:date>"));
 });
 
 test("buildContentOpfWithCover", function (assert) {
@@ -167,13 +176,13 @@ test("buildContentOpfWithCover", function (assert) {
             "<dc:creator opf:file-as=\"Dummy &amp; Author\" opf:role=\"aut\">Dummy &amp; Author</dc:creator>" +
             "<dc:identifier id=\"BookId\" opf:scheme=\"URI\">Dummy UUID</dc:identifier>" +
             "<dc:contributor opf:role=\"bkp\">[https://github.com/dteviot/WebToEpub] (ver. unknown)</dc:contributor>"+
-            "<meta content=\"cover-image\" name=\"cover\"/>" +
+            "<meta name=\"cover\" content=\"cover-image\"/>" +
             "<dc:source id=\"id.cover-image\">http://bp.org/thepic.jpeg</dc:source>" +
             "<dc:source id=\"id.xhtml0000\">http://dummy.com/Title0</dc:source>" +
             "<dc:source id=\"id.xhtml0001\">http://dummy.com/Title1</dc:source>" +
             "</metadata>" +
             "<manifest>" +
-              "<item href=\"Images/0000_thepic.jpeg\" id=\"cover-image\" media-type=\"image/jpeg\"/>" +
+              "<item href=\"Images/0000_thepic.jpg\" id=\"cover-image\" media-type=\"image/jpeg\"/>" +
               "<item href=\"Text/0000_Title0.xhtml\" id=\"xhtml0000\" media-type=\"application/xhtml+xml\"/>" +
               "<item href=\"Text/0001_Title1.xhtml\" id=\"xhtml0001\" media-type=\"application/xhtml+xml\"/>" +
               "<item href=\"Styles/stylesheet.css\" id=\"stylesheet\" media-type=\"text/css\"/>" +
@@ -213,8 +222,8 @@ test("buildContentOpfWithTranslatorAndAuthorFileAs", function (assert) {
             "<dc:contributor opf:file-as=\"Baka-Tsuki staff\" opf:role=\"trl\">Baka-Tsuki staff</dc:contributor>" +
             "<dc:identifier id=\"BookId\" opf:scheme=\"URI\">Dummy UUID</dc:identifier>" +
             "<dc:contributor opf:role=\"bkp\">[https://github.com/dteviot/WebToEpub] (ver. unknown)</dc:contributor>"+
-            "<meta content=\"BakaSeries\" name=\"calibre:series\"/>" +
-            "<meta content=\"666\" name=\"calibre:series_index\"/>" +
+            "<meta name=\"calibre:series\" content=\"BakaSeries\"/>" +
+            "<meta name=\"calibre:series_index\" content=\"666\"/>" +
             "<dc:source id=\"id.xhtml0000\">http://dummy.com/Title0</dc:source>" +
             "<dc:source id=\"id.xhtml0001\">http://dummy.com/Title1</dc:source>" +
             "</metadata>" +
@@ -239,10 +248,10 @@ test("buildTableOfContents", function (assert) {
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
         "<ncx xmlns=\"http://www.daisy.org/z3986/2005/ncx/\" version=\"2005-1\" xml:lang=\"en\">" +
           "<head>" +
-            "<meta content=\"Dummy UUID\" name=\"dtb:uid\"/>" +
-            "<meta content=\"2\" name=\"dtb:depth\"/>" +
-            "<meta content=\"0\" name=\"dtb:totalPageCount\"/>" +
-            "<meta content=\"0\" name=\"dtb:maxPageNumber\"/>" +
+            "<meta name=\"dtb:uid\" content=\"Dummy UUID\"/>" +
+            "<meta name=\"dtb:depth\" content=\"2\"/>" +
+            "<meta name=\"dtb:totalPageCount\" content=\"0\"/>" +
+            "<meta name=\"dtb:maxPageNumber\" content=\"0\"/>" +
           "</head>" +
           "<docTitle>" +
             "<text>Dummy &lt;Title&gt;</text>" +
@@ -282,10 +291,10 @@ test("buildNestedTableOfContents", function (assert) {
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
         "<ncx xmlns=\"http://www.daisy.org/z3986/2005/ncx/\" version=\"2005-1\" xml:lang=\"en\">" +
           "<head>" +
-            "<meta content=\"Dummy UUID\" name=\"dtb:uid\"/>" +
-            "<meta content=\"2\" name=\"dtb:depth\"/>" +
-            "<meta content=\"0\" name=\"dtb:totalPageCount\"/>" +
-            "<meta content=\"0\" name=\"dtb:maxPageNumber\"/>" +
+            "<meta name=\"dtb:uid\" content=\"Dummy UUID\"/>" +
+            "<meta name=\"dtb:depth\" content=\"2\"/>" +
+            "<meta name=\"dtb:totalPageCount\" content=\"0\"/>" +
+            "<meta name=\"dtb:maxPageNumber\" content=\"0\"/>" +
           "</head>" +
           "<docTitle>" +
             "<text>Dummy &lt;Title&gt;</text>" +
@@ -385,6 +394,7 @@ test("makeCoverImageXhtmlFile", function (assert) {
     let imageInfo = new ImageInfo("http://dummy/cover.png", 0, "http://dummy/cover.png");
     imageInfo.width = 400;
     imageInfo.height = 600;
+    imageInfo.mediaType = "image/png";
     imageInfo.isCover = true;
     let dummyImageCollector = {
         userPreferences: makeDummyUserPreferences(true, true),
@@ -420,6 +430,7 @@ test("makeCoverImageXhtmlFileAsImg", function (assert) {
     imageInfo.width = 400;
     imageInfo.height = 600;
     imageInfo.isCover = true;
+    imageInfo.mediaType = "image/png";
     let dummyImageCollector = {
         userPreferences: makeDummyUserPreferences(true, false),
         coverImageInfo: imageInfo,
@@ -449,6 +460,7 @@ test("makeCoverImageXhtmlFileNoSourceUrl", function (assert) {
     imageInfo.width = 400;
     imageInfo.height = 600;
     imageInfo.isCover = true;
+    imageInfo.mediaType = "image/png";
     let dummyImageCollector = {
         userPreferences: makeDummyUserPreferences(false, true),
         coverImageInfo: imageInfo,

@@ -6,10 +6,10 @@
 
 parserFactory.registerManualSelect(
     "Baka-Tsuki Series Page", 
-    function() { return new BakaTsukiSeriesPageParser(); }
+    () => new BakaTsukiSeriesPageParser()
 );
 
-class BakaTsukiSeriesPageParser extends Parser{
+class BakaTsukiSeriesPageParser extends Parser {
     constructor() {
         super(new BakaTsukiImageCollector());
     }
@@ -44,7 +44,7 @@ class BakaTsukiSeriesPageParser extends Parser{
         let menu = dom.querySelector("div#content");
         return Promise.resolve(util.hyperlinksToChapterList(menu, 
             BakaTsukiSeriesPageParser.possibleChapterLink));
-    };
+    }
 
     static possibleChapterLink(link) {
         let href = link.href;
@@ -53,20 +53,19 @@ class BakaTsukiSeriesPageParser extends Parser{
 
     findContent(dom) {
         return dom.querySelector("div#mw-content-text");
-    };
+    }
 
-    populateUI(dom) {
-        document.getElementById("higestResolutionImagesRow").hidden = false; 
+    populateUIImpl() {
+        document.getElementById("highestResolutionImagesRow").hidden = false;
         document.getElementById("unSuperScriptAlternateTranslations").hidden = false; 
         document.getElementById("translatorRow").hidden = false;
         document.getElementById("fileAuthorAsRow").hidden = false;
-        super.populateUI(dom);
     }
 
     // title of the story  (not to be confused with title of each chapter)
     extractTitleImpl(dom) {
         return dom.querySelector("#firstHeading");
-    };
+    }
 
     customRawDomToContentStep(chapter, content) {
         BakaTsukiParser.stripGalleryBox(content);

@@ -7,7 +7,7 @@
  * Can't hold all URLs.  So just record last chapter for each story.
 */
 class ReadingList {
-    constructor () {
+    constructor() {
         this.epubs = new Map();
     }
 
@@ -23,7 +23,7 @@ class ReadingList {
     }
 
     tryDeleteEpubAndSave(url) {
-        if (this.getEpub(url)){
+        if (this.getEpub(url)) {
             this.deleteEpub(url);
             this.writeToLocalStorage();
             return true;
@@ -31,19 +31,44 @@ class ReadingList {
         return false;
     }
 
+    setEpub(url, chapterURL) {
+        this.epubs.set(url, chapterURL);
+        this.writeToLocalStorage();
+    }
+
     getEpub(url) {
         return this.epubs.get(url);
     }
 
-    deselectOldChapters(url, chapterList) {
+    async deselectOldChapters(url, chapterList) {
         let oldUrl = this.epubs.get(url);
         if (oldUrl != null) {
-            for(let i = 0; i < chapterList.length; ++i) {
+            let foundLastURL = false;
+            for (let i = 0; i < chapterList.length; ++i) {
                 if (oldUrl === chapterList[i].sourceUrl) {
-                    for(let j = 0; j <= i; ++j) {
+                    foundLastURL = true;
+                    for (let j = 0; j <= i; ++j) {
                         chapterList[j].isIncludeable = false;
+                        chapterList[j].previousDownload = true;
                     }
                     break;
+                }
+            }
+            if (!foundLastURL) {
+                let SourceChapterList = await Library.LibGetSourceChapterList(url);
+                if (SourceChapterList == null) {
+                    return;
+                }
+                for (let i = chapterList.length-1; i >= 0; --i) {
+                    for (let j = SourceChapterList.length-1; j >= 0; --j) {
+                        if (SourceChapterList[j] === chapterList[i].sourceUrl) {
+                            for (let z = 0; z <= i; ++z) {
+                                chapterList[z].isIncludeable = false;
+                                chapterList[z].previousDownload = true;
+                            }
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -51,9 +76,16 @@ class ReadingList {
 
     update(url, chapterList) {
         let oldUrl = this.epubs.get(url);
+        let chapterListIsIncludeable = [...chapterList].filter(a => a.isIncludeable);
         if (oldUrl != null) {
-            for(let c of chapterList) {
-                if (c.isIncludeable) {
+            let progressBarValue = ProgressBar.getUiElement()?.value;
+            if (progressBarValue) {
+                let finished = progressBarValue - 1;
+                for (let i = 0; i < finished; i++) {
+                    this.epubs.set(url, chapterListIsIncludeable[i].sourceUrl);
+                }
+            } else {
+                for (let c of chapterListIsIncludeable) {
                     this.epubs.set(url, c.sourceUrl);
                 }
             }
@@ -64,23 +96,23 @@ class ReadingList {
     }
 
     static replacer(key, value) {
-        switch(key) {
-        case "epubs":
-            return [...value].map(v => ({ toc: v[0], lastUrl: v[1] }));
-        default:
-            return value;
+        switch (key) {
+            case "epubs":
+                return [...value].map(v => ({ toc: v[0], lastUrl: v[1] }));
+            default:
+                return value;
         }
     }
 
     static reviver(key, value) {
-        switch(key) {
-        case "epubs":
-            return new Map([...value].map(ReadingList.reviveEpub));
-        case "history": {
-            return value[value.length - 1];
-        }
-        default:
-            return value;
+        switch (key) {
+            case "epubs":
+                return new Map([...value].map(ReadingList.reviveEpub));
+            case "history": {
+                return value[value.length - 1];
+            }
+            default:
+                return value;
         }
     }
 
@@ -121,8 +153,8 @@ class ReadingList {
     }
 
     showReadingList(table) {
-        util.removeChildElementsMatchingCss(table, "tr");
-        for(let e of this.epubs.keys()) {
+        util.removeChildElementsMatchingSelector(table, "tr");
+        for (let e of this.epubs.keys()) {
             let row = document.createElement("tr");
             table.appendChild(row);
             let link = document.createElement("a");
@@ -130,7 +162,7 @@ class ReadingList {
             link.textContent = e;
             this.appendColumnToRow(row, link);
             let button = document.createElement("button");
-            button.textContent = chrome.i18n.getMessage("__MSG_button_Remove__");
+            button.textContent = UIText.Common.remove;
             this.appendColumnToRow(row, button);
         }
     }

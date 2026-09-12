@@ -2,7 +2,7 @@
 
 parserFactory.register("dark-novels.ru", () => new DarkNovelsParser());
 
-class DarkNovelsParser extends Parser{
+class DarkNovelsParser extends Parser {
     constructor() {
         super();
     }
@@ -11,15 +11,15 @@ class DarkNovelsParser extends Parser{
         let chapters = [...dom.querySelectorAll("tr.chapter a")]
             .map(a => util.hyperLinkToChapter(a));
         return Promise.resolve(chapters);
-    };
+    }
 
     findContent(dom) {
-        return Parser.findConstrutedContent(dom);
-    };
+        return Parser.findConstructedContent(dom);
+    }
 
     extractTitleImpl(dom) {
         return dom.querySelector("div.book-info-container h2");
-    };
+    }
 
     findCoverImageUrl(dom) {
         return util.getFirstImgSrc(dom, "div.book-cover-container");
@@ -53,13 +53,24 @@ class DarkNovelsParser extends Parser{
         let newDoc = Parser.makeEmptyDocForContent(fetchUrl);
         let rawContent = await DarkNovelsParser.getStringFromZip(xhr.arrayBuffer);
         let text = "<div id=\"raw\">" + rawContent + "</div>";
-        let rawDom = new DOMParser().parseFromString(text, "text/html");
+        let rawDom = util.sanitize(text);
         let content = rawDom.querySelector("div#raw");
         newDoc.content.appendChild(content);
         return newDoc.dom;
     }
     
     static async getStringFromZip(arrayBuffer) {
+        // server is down so i am unable to test the code here is my guess
+        let theFile = null;
+        let zipreader = await new zip.Uint8ArrayReader(arrayBuffer);
+        let Zip = new zip.ZipReader(zipreader, {useWebWorkers: false});
+        let ZipContent = await Zip.getEntries();
+        ZipContent = ZipContent.filter(a => a.directory == false);
+        for (let element of ZipContent) {
+            theFile = await element.getData(new zip.TextWriter());
+        }
+        return theFile;
+        /* old implementation
         let zip = await new JSZip().loadAsync(arrayBuffer);
         let theFile = null;
         zip.forEach(function (relativePath, file) {
@@ -69,6 +80,7 @@ class DarkNovelsParser extends Parser{
             }
         });
         return theFile.async("text");
+        */
     }
     
     getInformationEpubItemChildNodes(dom) {
